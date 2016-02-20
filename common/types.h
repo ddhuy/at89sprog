@@ -1,0 +1,40 @@
+#ifndef _TYPES_H_
+#define _TYPES_H_
+
+typedef enum ErrorID_t
+{
+    EID_OK,
+    EID_NOK,
+    EID_SMALL_BUFFER,
+
+    EID_ARG_NULL,
+    EID_ARG_INVALID,
+
+    EID_HEX_OPEN,
+    EID_HEX_READ,
+    EID_HEX_WRITE,
+    EID_HEX_CLOSE,
+
+    EID_COM_OPEN,
+    EID_COM_GETATT,
+    EID_COM_SETATT,
+    EID_COM_SEND,
+    EID_COM_RECV,
+    EID_COM_ATTRIB,
+    EID_COM_CLOSE,
+    EID_COM_TIMEOUT,
+
+    EID_MEM_EXHAUTED,
+
+    EID_QUE_FULL,
+    EID_QUE_EMPTY,
+
+    EID_MSG_BAD_LEN,
+    EID_MSG_BAD_CRC,
+    EID_MSG_DECODE,
+    EID_MSG_ENCODE,
+
+} ISP_EID;
+
+#endif /* _TYPES_H_ */
+
