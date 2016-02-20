@@ -134,7 +134,9 @@ main ( int argc,
                 strerror(errno));
         goto EXIT_PROGRAM;
     }
-    printf("Sent %d bytes\n", MESSAGE_SIZE);
+    else
+        printf("Sent %d bytes\n", MESSAGE_SIZE);
+
 
     
 EXIT_PROGRAM:

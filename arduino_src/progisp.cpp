@@ -11,10 +11,9 @@
 
 uint8_t  data_buffer[MESSAGE_SIZE] = { 0 };
 uint16_t data_size = 0;
-
 uint16_t crc = 0x0000;
+ISP_EID  eid = EID_OK;
 
-ISP_EID eid = EID_OK;
 
 IspMessage ispmsg = 
 {
@@ -33,11 +32,11 @@ error_handling (ISP_EID eid)
     if (eid == EID_OK)
     {
         digitalWrite(LED_01, HIGH);
-        delay(500);
+        delay(400);
         digitalWrite(LED_01, LOW);
-        delay(500);
+        delay(400);
         digitalWrite(LED_01, HIGH);
-        delay(500);
+        delay(400);
         digitalWrite(LED_01, LOW);
     }
     else if (eid == EID_MSG_BAD_LEN)
@@ -59,7 +58,7 @@ error_handling (ISP_EID eid)
         digitalWrite(LED_03, LOW);
     }
 
-    Serial.print("Received ");
+    Serial.print("Received: ");
     Serial.print(data_size);
     Serial.println(" bytes");
 
@@ -95,16 +94,23 @@ setup ( void )
 void
 loop ( void )
 {
-
-    int n = Serial.available();
-    if (data_size < MESSAGE_SIZE)
+    int nbytes = Serial.available();
+    while (data_size < MESSAGE_SIZE && nbytes > 0)
     {
-        while (n--)
-            data_buffer[data_size++] = Serial.read();
+        nbytes--;
+        data_buffer[data_size++] = Serial.read();
     }
 
     if (data_size >= MESSAGE_SIZE)
     {
+        digitalWrite(LED_01, HIGH);
+        delay(500);
+        digitalWrite(LED_01, LOW);
+        delay(500);
+        digitalWrite(LED_01, HIGH);
+        delay(500);
+        digitalWrite(LED_01, LOW);
+ 
         // decode message
         eid = decode_message(data_buffer, &ispmsg);
         // check crc
@@ -120,10 +126,4 @@ loop ( void )
         // process done, continue receiving data
         data_size = 0;
     }
-
-}
-
-void
-serialEvent ( void )
-{
 }

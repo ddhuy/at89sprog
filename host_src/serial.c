@@ -65,13 +65,16 @@ serial_open ( char* devname,
 
     // set control chacraters
     dev_ptr->termios.c_cc[VMIN]  = 1; // wait for minimum chars come
-    dev_ptr->termios.c_cc[VTIME] = 0; // dont wait for read returnsi
+    dev_ptr->termios.c_cc[VTIME] = 0; // dont wait for read returns
 
     // commit new options
     if (tcsetattr(dev_ptr->fd, TCSANOW, &dev_ptr->termios) != 0)
     {
         return EID_COM_SETATT;
     }
+
+    // wait for arduino to reset
+    usleep(1600 * 1000);
 
     // flush anything already in serial buffer
     tcflush(dev_ptr->fd, TCIOFLUSH);
@@ -82,7 +85,7 @@ serial_open ( char* devname,
 ISP_EID
 serial_send ( SerialDevice* dev_ptr,
               uint8_t* data_ptr,
-              uint16_t  data_len )
+              uint16_t data_len )
 {
     ISP_EID eid = EID_OK;
     uint32_t nbyte = 0;
@@ -139,7 +142,7 @@ serial_recv ( SerialDevice* dev_ptr,
             data_ptr[len] = 0;
 
             printf("----------------------\n");
-            printf("Received: %d bytes\n", n);
+            printf("Received: %d bytes\n", len);
             printf("Data: %s\n", data_ptr);
             printf("----------------------\n");
         }
