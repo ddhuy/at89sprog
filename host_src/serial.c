@@ -51,7 +51,7 @@ serial_open ( char* devname,
     dev_ptr->termios.c_cflag &= ~CSTOPB;
     dev_ptr->termios.c_cflag &= ~CSIZE;
     dev_ptr->termios.c_cflag |= CS8;
-    // HW flow control
+    // no HW flow control
     dev_ptr->termios.c_cflag &= ~CRTSCTS;
 
     // no input/output flow control
@@ -74,7 +74,7 @@ serial_open ( char* devname,
     }
 
     // wait for arduino to reset
-    usleep(1700 * 1000);
+    usleep(1500 * 1000);
 
     // flush anything already in serial buffer
     tcflush(dev_ptr->fd, TCIOFLUSH);
@@ -122,6 +122,7 @@ serial_recv ( SerialDevice* dev_ptr,
 {
     ISP_EID eid = EID_OK;
     int n = 0, len = 0;
+    char b[1];
 
     if (dev_ptr == NULL
         || data_ptr == NULL
@@ -136,22 +137,17 @@ serial_recv ( SerialDevice* dev_ptr,
     // start reading
     while (len < *data_len)
     {
-        n = read(dev_ptr->fd, &data_ptr[len], *data_len - len);
+        n = read(dev_ptr->fd, b, 1);
         if (n <= 0)
         {
             if (errno == EAGAIN)
                 continue;
-
             eid = EID_COM_RECV;
             break;
         }
         else
         {
-            len += n;
-
-            printf("-----------\n");
-            printf("Received: %d\n", len);
-            printf("-----------\n");
+            data_ptr[len++] = *b;
         }
     }
 

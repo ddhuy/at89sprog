@@ -37,7 +37,8 @@ get_data_routine ( void* parg )
     eid = serial_recv(&serial_dev,
                       recv_buffer,
                       &recv_size);
-    
+    printf("Received %d bytes\n", recv_size);
+
     if (eid == EID_OK)
     {
         eid = decode_message(recv_buffer, &ispmsg);
@@ -166,12 +167,6 @@ EXIT_PROGRAM:
         printf("Received serial data failed: eid=%d errno=%s\n",
                 eid,
                 strerror(errno));
-    }
-    else
-    {
-        printf("Received len=%d  str=\'%s\'\n",
-                recv_size,
-                recv_buffer);
     }
 
 

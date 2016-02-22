@@ -16,7 +16,7 @@
  *      PREPROCESSOR & CONSTANT
  *
  ******************************************************************/
-#define  MESSAGE_SIZE    128
+#define  MESSAGE_SIZE    256
 #define  HEADER_SIZE     4
 #define  DATA_SIZE      (MESSAGE_SIZE - HEADER_SIZE)
 
