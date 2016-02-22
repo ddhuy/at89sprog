@@ -8,6 +8,7 @@
 #include <types.h>
 
 #define NAME_MAX    256
+#define BLCK_SIZE   64
 
 typedef struct SerialConfig_t
 {

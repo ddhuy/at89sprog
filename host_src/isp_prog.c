@@ -31,12 +31,32 @@ void *
 get_data_routine ( void* parg )
 {
     ISP_EID eid = EID_OK;
+    IspMessage ispmsg;
 
-    recv_size = 64;
+    recv_size = MESSAGE_SIZE;
     eid = serial_recv(&serial_dev,
                       recv_buffer,
                       &recv_size);
     
+    if (eid == EID_OK)
+    {
+        eid = decode_message(recv_buffer, &ispmsg);
+        if (eid == EID_OK)
+        {
+            // process message
+            switch (ispmsg.hdr.typ)
+            {
+                case MSGT_ACK:
+                    printf("Message sent successfully: %d\n", ispmsg.msg.ack.resp);
+                    break;
+
+                default:
+                    printf("Invalid message type: %d\n", ispmsg.hdr.typ);
+                    break;
+            }
+        }
+    }
+
     return (void *)(eid);
 }
 
@@ -70,12 +90,12 @@ main ( int argc,
     memset(&serial_dev, 0, sizeof(SerialDevice));
 
     // prepare message header
-    ispmsg.hdr.msgtyp = MSGT_MEM_WRITE;
-    ispmsg.hdr.msglen = DATA_SIZE;
-    ispmsg.hdr.msgcrc = 0x0000;
-
+    ispmsg.hdr.typ = MSGT_MEM_WRITE;
+    ispmsg.hdr.len = DATA_SIZE;
+    ispmsg.hdr.crc = 0x0000; 
+ 
     // message data content
-    eid = read_hexfile(hexfile, ispmsg.data, &ispmsg.hdr.msglen);
+    eid = read_hexfile(hexfile, ispmsg.msg.data, &ispmsg.hdr.len);
     if (eid != EID_OK)
     {
         printf("Could not read hex file: eid=%d errno=%s\n",
@@ -83,11 +103,11 @@ main ( int argc,
                 strerror(errno));
         goto EXIT_PROGRAM;
     }
-    printf("Read hex file successfully: %d bytes\n", ispmsg.hdr.msglen);
+    printf("Read hex file successfully: %d bytes\n", ispmsg.hdr.len);
 
-    // data content crc
-    ispmsg.hdr.msgcrc = gen_crc16(ispmsg.data, ispmsg.hdr.msglen);
-    printf("Data content CRC: %04x\n", ispmsg.hdr.msgcrc);
+    // data crc
+    ispmsg.hdr.crc = gen_crc16(ispmsg.msg.data, ispmsg.hdr.len);
+    printf("Data CRC: %04x\n", ispmsg.hdr.crc);
 
     // encode message
     eid = encode_message(&ispmsg, send_buffer);
@@ -137,8 +157,6 @@ main ( int argc,
     else
         printf("Sent %d bytes\n", MESSAGE_SIZE);
 
-
-    
 EXIT_PROGRAM:
 
     // waiting for thread done

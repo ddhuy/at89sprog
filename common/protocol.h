@@ -1,22 +1,22 @@
 #ifndef _ISP_PROTOCOL_H_
 #define _ISP_PROTOCOL_H_
 
-/******************************************************************************
+/*******************************************************************
  *
  *      HEADERS
  *
- *****************************************************************************/
+ ******************************************************************/
 #include <stdint.h>
 
 #include "types.h"
 
 
-/******************************************************************************
+/*******************************************************************
  *
  *      PREPROCESSOR & CONSTANT
  *
- *****************************************************************************/
-#define  MESSAGE_SIZE    256
+ ******************************************************************/
+#define  MESSAGE_SIZE    128
 #define  HEADER_SIZE     4
 #define  DATA_SIZE      (MESSAGE_SIZE - HEADER_SIZE)
 
@@ -25,7 +25,7 @@
 /*
  * Message type
  */
-#define  MSGT_EOC            0x00
+#define  MSGT_NULL           0x00
 #define  MSGT_ACK            0xFF
 
 #define  MSGT_MEM_WRITE      0x31
@@ -36,21 +36,40 @@
 #define  MSGT_MCU_READ       0x36
 
 
-
-/******************************************************************************
+/*******************************************************************
  *
  *      DATA TYPE
  *
- *****************************************************************************/
+ ******************************************************************/
 /*
  * Message header
  */
 typedef struct MessageHeader_t
 {
-    uint8_t    msgtyp;
-    uint8_t    msglen;
-    uint16_t   msgcrc;
+    uint8_t    typ;
+    uint8_t    len;
+    uint16_t   crc;
 } MsgHdr;
+
+/*
+ * Acknowledge message
+ */
+typedef struct MsgAck_t
+{
+    ISP_EID  resp;
+} MsgAck;
+
+
+/*
+ * Message data content
+ */
+
+typedef union MsgData_t
+{
+    MsgAck  ack;
+    uint8_t data[DATA_SIZE];
+
+} MsgCnt;
 
 
 /*
@@ -58,17 +77,17 @@ typedef struct MessageHeader_t
  */
 typedef struct IspMessage_t
 {
-    MsgHdr     hdr;
-    uint8_t    data[DATA_SIZE];
+    MsgHdr   hdr;
+    MsgCnt   msg;
 
 } IspMessage;
 
 
-/******************************************************************************
+/*******************************************************************
  *
  *      FUNCTION DECLARATION
  *
- *****************************************************************************/
+ ******************************************************************/
 /*
  * Description:
  *

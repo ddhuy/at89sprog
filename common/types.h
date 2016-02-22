@@ -29,6 +29,7 @@ typedef enum ErrorID_t
     EID_QUE_FULL,
     EID_QUE_EMPTY,
 
+    EID_MSG_BAD_MSGT,
     EID_MSG_BAD_LEN,
     EID_MSG_BAD_CRC,
     EID_MSG_DECODE,

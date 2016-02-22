@@ -15,18 +15,37 @@ uint16_t crc = 0x0000;
 ISP_EID  eid = EID_OK;
 
 
-IspMessage ispmsg = 
+IspMessage ispmsg;
+
+
+static ISP_EID
+send_message ( uint8_t* buffer,
+               uint16_t length )
 {
+    uint16_t byte_sent = 0;
+
+    if (buffer != NULL)
     {
-        .msgtyp = 0,
-        .msglen = 0,
-        .msgcrc = 0x0000,
-    },
-    .data = { 0 },
-};
+        while (byte_sent < length)
+        {
+            byte_sent = Serial.write(buffer, length);
+            if (byte_sent > 0)
+            {
+                buffer += byte_sent;
+                length -= byte_sent;
+            }
+            else
+                break;
+        }
+    }
+
+    if (byte_sent != length)
+        return EID_COM_SEND;
+    return EID_OK;
+}
 
 
-void
+static void
 error_handling (ISP_EID eid)
 {
     if (eid == EID_OK)
@@ -35,9 +54,9 @@ error_handling (ISP_EID eid)
         delay(400);
         digitalWrite(LED_01, LOW);
         delay(400);
-        digitalWrite(LED_01, HIGH);
-        delay(400);
-        digitalWrite(LED_01, LOW);
+//        digitalWrite(LED_01, HIGH);
+//        delay(400);
+//        digitalWrite(LED_01, LOW);
     }
     else if (eid == EID_MSG_BAD_LEN)
     {
@@ -58,15 +77,17 @@ error_handling (ISP_EID eid)
         digitalWrite(LED_03, LOW);
     }
 
-    Serial.print("Received: ");
-    Serial.print(data_size);
-    Serial.println(" bytes");
-
-    Serial.print("CRC: ");
-    Serial.println(crc, HEX);
-
-    Serial.print("MSGCRC: ");
-    Serial.println(ispmsg.hdr.msgcrc, HEX);
+    // prepare acknowledge message
+    ispmsg.hdr.typ = MSGT_ACK;
+    ispmsg.hdr.len = 2;
+    ispmsg.hdr.crc = 0x0000;
+    ispmsg.msg.ack.resp = eid;
+    // encode message
+    if (encode_message(&ispmsg, data_buffer) == EID_OK)
+    {
+        // send message
+        eid = send_message(data_buffer, MESSAGE_SIZE);
+    }
 }
 
 void
@@ -103,22 +124,25 @@ loop ( void )
 
     if (data_size >= MESSAGE_SIZE)
     {
-        digitalWrite(LED_01, HIGH);
-        delay(500);
-        digitalWrite(LED_01, LOW);
-        delay(500);
-        digitalWrite(LED_01, HIGH);
-        delay(500);
-        digitalWrite(LED_01, LOW);
- 
         // decode message
         eid = decode_message(data_buffer, &ispmsg);
-        // check crc
+        // process message
         if (eid == EID_OK)
         {
-            crc = gen_crc16(ispmsg.data, ispmsg.hdr.msglen);
-            if (crc != ispmsg.hdr.msgcrc)
-                eid = EID_MSG_BAD_CRC;
+            switch(ispmsg.hdr.typ)
+            {
+                case MSGT_MEM_WRITE:
+                    // check crc
+                    crc = gen_crc16(ispmsg.msg.data, ispmsg.hdr.len);
+                    if (crc != ispmsg.hdr.crc)
+                        eid = EID_MSG_BAD_CRC;
+                    else
+                        eid = EID_OK;
+                    break;
+
+                default:
+                    break;
+            }
         }
 
         // toggle LED to display error

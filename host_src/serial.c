@@ -51,7 +51,7 @@ serial_open ( char* devname,
     dev_ptr->termios.c_cflag &= ~CSTOPB;
     dev_ptr->termios.c_cflag &= ~CSIZE;
     dev_ptr->termios.c_cflag |= CS8;
-    // no HW flow control
+    // HW flow control
     dev_ptr->termios.c_cflag &= ~CRTSCTS;
 
     // no input/output flow control
@@ -74,7 +74,7 @@ serial_open ( char* devname,
     }
 
     // wait for arduino to reset
-    usleep(1600 * 1000);
+    usleep(1700 * 1000);
 
     // flush anything already in serial buffer
     tcflush(dev_ptr->fd, TCIOFLUSH);
@@ -88,7 +88,7 @@ serial_send ( SerialDevice* dev_ptr,
               uint16_t data_len )
 {
     ISP_EID eid = EID_OK;
-    uint32_t nbyte = 0;
+    uint32_t byte_sent = 0;
 
     if (dev_ptr == NULL || data_ptr == NULL)
     {
@@ -96,11 +96,20 @@ serial_send ( SerialDevice* dev_ptr,
         return eid;
     }
 
-    nbyte = write(dev_ptr->fd, data_ptr, data_len);
-    if (nbyte != data_len)
+    while (byte_sent < data_len)
     {
-        eid = EID_COM_SEND;
-        return eid;
+        // send data
+        byte_sent = write(dev_ptr->fd, data_ptr, data_len);
+        if (byte_sent > 0)
+        {
+            data_ptr += byte_sent;
+            data_len -= byte_sent;
+        }
+        else
+        {
+            eid = EID_COM_SEND;
+            break;
+        }
     }
 
     return eid;
@@ -127,7 +136,7 @@ serial_recv ( SerialDevice* dev_ptr,
     // start reading
     while (len < *data_len)
     {
-        n = read(dev_ptr->fd, &data_ptr[len], *data_len);
+        n = read(dev_ptr->fd, &data_ptr[len], *data_len - len);
         if (n <= 0)
         {
             if (errno == EAGAIN)
@@ -139,18 +148,11 @@ serial_recv ( SerialDevice* dev_ptr,
         else
         {
             len += n;
-            data_ptr[len] = 0;
 
-            printf("----------------------\n");
-            printf("Received: %d bytes\n", len);
-            printf("Data: %s\n", data_ptr);
-            printf("----------------------\n");
+            printf("-----------\n");
+            printf("Received: %d\n", len);
+            printf("-----------\n");
         }
-    }
-
-    if (eid == EID_OK)
-    {
-        *data_len = len;
     }
 
     return eid;
