@@ -21,7 +21,7 @@
  */
 AT89S_EID
 hexio_readall ( char* filename,
-                unsigned char* data_ptr,
+                unsigned char** data_pptr,
                 int* data_len_ptr );
 
 
