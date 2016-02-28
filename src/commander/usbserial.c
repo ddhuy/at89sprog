@@ -35,7 +35,7 @@ usbserial_open ( char* dev_name,
                  int baudrate,
                  int config )
 {
-    speed_t io_baudrate;
+    speed_t io_baudrate = B9600;
 
     if (dev_name == NULL || dev_ptr == NULL)
     {
@@ -46,14 +46,14 @@ usbserial_open ( char* dev_name,
         || baudrate != US_BAUDRATE_19200
         || baudrate != US_BAUDRATE_115200)
     {
-        return AT89S_EID_SERIAL_INVALID_BAUDRATE;
+        return AT89S_EID_SERIAL_BAUDRATE_INVALID;
     }
 
     if (config != US_CONFIG_8N1
         || config != US_CONFIG_7E1
         || config != US_CONFIG_7O1)
     {
-        return AT89S_EID_SERIAL_INVALID_CONFIG;
+        return AT89S_EID_SERIAL_CONFIG_INVALID;
     }
 
     // store device name
@@ -81,8 +81,8 @@ usbserial_open ( char* dev_name,
     else if (baudrate == US_BAUDRATE_115200)
         io_baudrate = B115200;
 
-    if (cfsetispeed(&dev_ptr->tios, baudrate) != 0
-        || cfsetospeed(&dev_ptr->tios, baudrate) != 0)
+    if (cfsetispeed(&dev_ptr->tios, io_baudrate) != 0
+        || cfsetospeed(&dev_ptr->tios, io_baudrate) != 0)
     {
         return AT89S_EID_SERIAL_SET_IOSPEED;
     }
