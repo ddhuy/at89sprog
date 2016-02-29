@@ -7,6 +7,7 @@ COMMON_DIR  = ${WORKING_DIR}/../common
 BINARY_DIR  = ${WORKING_DIR}
 
 SRCS = $(shell ls ${WORKING_DIR}/*.c 2>/dev/null) \
+	   $(shell ls ${COMMON_DIR}/*.c 2>/dev/null) \
 	   $(shell ls ${COMMON_DIR}/*.cpp 2>/dev/null) \
 
 TMP_OBJS = $(SRCS:.c=.o)
@@ -30,7 +31,7 @@ RM = rm -rf
 LIBS   = -lpthread
 CFLAGS = -Wall -Wextra -Os -g
 LFLAGS =
-IFLAGS = -I ${WORKING_DIR} -I ${COMMON_DIR}
+IFLAGS = -I${WORKING_DIR} -I${COMMON_DIR}
 
 .c.o:
 	$(CC) $(CFLAGS) $(IFLAGS) -c $< -o $@

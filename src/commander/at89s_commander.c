@@ -19,11 +19,33 @@
  *
  ******************************************************************/
 /*
+ * Argument commands
+ */
+typedef enum ArgCmd_t
+{
+    ARG_CMD_NULL = 0,
+
+    ARG_CMD_WRITE_FLS,
+    ARG_CMD_READ_FLS,
+    ARG_CMD_ERASE_FLS,
+
+    ARG_CMD_WRITE_ROM,
+    ARG_CMD_READ_ROM,
+    ARG_CMD_ERASE_ROM,
+
+    ARG_CMD_READ_SIGN,
+    ARG_CMD_READ_USER_SIGN,
+    ARG_CMD_WRITE_USER_SIGN,
+
+} ArgCmd;
+
+
+/*
  *
  */
 typedef struct AT89S_Type_t
 {
-    AT89S_Command  at89s_cmd;
+    ArgCmd  arg_cmd;
     char* hex_file;
     char* buffer;
     int   buffer_len;
@@ -170,11 +192,11 @@ AT89S_Type* v_configs_ptr = NULL;
  *
  ******************************************************************/
 /*
- * purpose:
+ * Purpose:
  *
- * input:
+ * Input:
  *
- * output:
+ * Output:
  *
  */
 static AT89S_EID
@@ -305,7 +327,7 @@ arg_psr_w ( AT89S_Type* pconf )
     if (pconf == NULL)
         return AT89S_EID_ARG_NULL;
 
-    pconf->at89s_cmd  = AT89S_CMD_WRITE_FLS;
+    pconf->arg_cmd  = ARG_CMD_WRITE_FLS;
     pconf->buffer     = NULL;
     pconf->buffer_len = 0;
 
@@ -326,7 +348,7 @@ arg_psr_r ( AT89S_Type* pconf )
     if (pconf == NULL)
         return AT89S_EID_ARG_NULL;
 
-    pconf->at89s_cmd  = AT89S_CMD_READ_FLS;
+    pconf->arg_cmd  = ARG_CMD_READ_FLS;
     pconf->buffer     = NULL;
     pconf->buffer_len = 0;
 
@@ -347,7 +369,7 @@ arg_psr_e ( AT89S_Type* pconf )
     if (pconf == NULL)
         return AT89S_EID_ARG_NULL;
 
-    pconf->at89s_cmd  = AT89S_CMD_ERASE_FLS;
+    pconf->arg_cmd  = ARG_CMD_ERASE_FLS;
     pconf->buffer     = NULL;
     pconf->buffer_len = 0;
 
@@ -368,7 +390,7 @@ arg_psr_b ( AT89S_Type* pconf )
     if (pconf == NULL)
         return AT89S_EID_ARG_NULL;
 
-    pconf->at89s_cmd  = AT89S_CMD_WRITE_ROM;
+    pconf->arg_cmd  = ARG_CMD_WRITE_ROM;
     pconf->buffer     = NULL;
     pconf->buffer_len = 0;
 
@@ -389,7 +411,7 @@ arg_psr_v ( AT89S_Type* pconf )
     if (pconf == NULL)
         return AT89S_EID_ARG_NULL;
 
-    pconf->at89s_cmd  = AT89S_CMD_READ_ROM;
+    pconf->arg_cmd  = ARG_CMD_READ_ROM;
     pconf->buffer     = NULL;
     pconf->buffer_len = 0;
 
@@ -410,7 +432,7 @@ arg_psr_c ( AT89S_Type* pconf )
     if (pconf == NULL)
         return AT89S_EID_ARG_NULL;
 
-    pconf->at89s_cmd  = AT89S_CMD_ERASE_ROM;
+    pconf->arg_cmd  = ARG_CMD_ERASE_ROM;
     pconf->buffer     = NULL;
     pconf->buffer_len = 0;
 
@@ -431,7 +453,7 @@ arg_psr_s ( AT89S_Type* pconf )
     if (pconf == NULL)
         return AT89S_EID_ARG_NULL;
 
-    pconf->at89s_cmd  = AT89S_CMD_READ_SIGNATURE;
+    pconf->arg_cmd  = ARG_CMD_READ_SIGN;
     pconf->buffer     = NULL;
     pconf->buffer_len = 0;
 
@@ -452,7 +474,7 @@ arg_psr_u ( AT89S_Type* pconf )
     if (pconf == NULL)
         return AT89S_EID_ARG_NULL;
 
-    pconf->at89s_cmd  = AT89S_CMD_READ_USER_SIGNATURE;
+    pconf->arg_cmd  = ARG_CMD_READ_USER_SIGN;
     pconf->buffer     = NULL;
     pconf->buffer_len = 0;
 
@@ -473,7 +495,7 @@ arg_psr_m ( AT89S_Type* pconf )
     if (pconf == NULL)
         return AT89S_EID_ARG_NULL;
 
-    pconf->at89s_cmd  = AT89S_CMD_WRITE_USER_SIGNATURE;
+    pconf->arg_cmd  = ARG_CMD_WRITE_USER_SIGN;
     pconf->buffer     = NULL;
     pconf->buffer_len = 0;
 
