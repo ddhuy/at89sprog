@@ -8,6 +8,11 @@
 #define  LED_02    9
 #define  LED_03    8
 
+#define  PIN_RST   49
+#define  PIN_MISO  50
+#define  PIN_MOSI  51
+#define  PIN_SCK   52
+
 
 uint8_t  data_buffer[MESSAGE_SIZE] = { 0 };
 uint16_t data_size = 0;
@@ -17,6 +22,34 @@ ISP_EID  eid = EID_OK;
 
 IspMessage ispmsg;
 
+
+static unsigned long
+isp_send_cmd (unsigned long command)
+{
+    unsigned long ibyte = 0;
+    char i;
+
+    for (i = 31; i >= 0; --i)
+    {
+        digitalWrite(PIN_SCK, LOW);
+        delayMicroseconds(2);
+
+        if ((command >> i) & 0x01)
+            digitalWrite(PIN_MOSI, HIGH);
+        else
+            digitalWrite(PIN_MOSI, LOW);
+
+        digitalWrite(PIN_SCK, HIGH); // pull high SCK to start write
+        delayMicroseconds(2);
+
+        ibyte |= (digitalRead(PIN_MISO) & 0x01) << i;
+
+    }
+    // turn SCK back to default
+    digitalWrite(PIN_SCK, HIGH);
+
+    return ibyte;
+}
 
 static ISP_EID
 send_message ( uint8_t* buffer,
@@ -54,9 +87,6 @@ error_handling (ISP_EID eid)
         delay(400);
         digitalWrite(LED_01, LOW);
         delay(400);
-//        digitalWrite(LED_01, HIGH);
-//        delay(400);
-//        digitalWrite(LED_01, LOW);
     }
     else if (eid == EID_MSG_BAD_LEN)
     {
@@ -76,7 +106,11 @@ error_handling (ISP_EID eid)
         digitalWrite(LED_02, HIGH);
         digitalWrite(LED_03, LOW);
     }
+}
 
+void
+resp_ack(ISP_EID eid)
+{
     // prepare acknowledge message
     ispmsg.hdr.typ = MSGT_ACK;
     ispmsg.hdr.len = 2;
@@ -86,17 +120,91 @@ error_handling (ISP_EID eid)
     if (encode_message(&ispmsg, data_buffer) == EID_OK)
     {
         // send message
-        eid = send_message(data_buffer, MESSAGE_SIZE);
+        send_message(data_buffer, MESSAGE_SIZE);
     }
+}
+
+ISP_EID
+process_read_signature ( void )
+{
+    unsigned tmp;
+    unsigned char len = 0;
+    unsigned long ibyte = 0;
+
+    // reset target to reprogramming mode
+    digitalWrite(PIN_RST, HIGH);
+    delay(10);
+
+//    // program enable
+//    ispmsg.msg.data[len++] = isp_send_cmd(0xAC);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x53);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x00);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x69);
+//    // read signature byte 1
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x28);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x00);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x00);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x00);
+//    // read signature byte 2
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x28);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x01);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x00);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x00);
+//    // read signature byte 3
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x28);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x02);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x00);
+//    ispmsg.msg.data[len++] = isp_send_cmd(0x00);
+    
+    ibyte = isp_send_cmd(0xAC53FF69);
+    ispmsg.msg.data[len++] = ((unsigned char *) &ibyte)[0];
+
+    ibyte = isp_send_cmd(0x28000000);
+    ispmsg.msg.data[len++] = ((unsigned char *) &ibyte)[0];
+
+    ibyte = isp_send_cmd(0x28010000);
+    ispmsg.msg.data[len++] = ((unsigned char *) &ibyte)[0];
+
+    ibyte = isp_send_cmd(0x28020000);
+    ispmsg.msg.data[len++] = ((unsigned char *) &ibyte)[0];
+
+
+    // prepare acknowledge message
+    ispmsg.hdr.typ = MSGT_SIG_READ;
+    ispmsg.hdr.len = len;
+    ispmsg.hdr.crc = gen_crc16(ispmsg.msg.data, ispmsg.hdr.len);
+
+    // encode message
+    if (encode_message(&ispmsg, data_buffer) == EID_OK)
+    {
+        // send message
+        send_message(data_buffer, MESSAGE_SIZE);
+    }
+
+    return EID_OK; 
 }
 
 void
 setup ( void )
 {
+    Serial.begin(9600);
+ 
+    // setup AT89S pins
+    pinMode(PIN_RST, OUTPUT);
+    pinMode(PIN_SCK, OUTPUT);
+    pinMode(PIN_MOSI, OUTPUT);
+    pinMode(PIN_MISO, INPUT);
+    // set pin voltage to default
+    digitalWrite(PIN_RST, LOW);
+    digitalWrite(PIN_SCK, HIGH);
+    digitalWrite(PIN_MOSI, HIGH);
+    
+    // setup status LED
     pinMode(LED_01, OUTPUT);
     pinMode(LED_02, OUTPUT);
     pinMode(LED_03, OUTPUT);
 
+    // blink status LED after setup done
     digitalWrite(LED_01, HIGH);
     delay(100);
     digitalWrite(LED_02, HIGH);
@@ -108,8 +216,6 @@ setup ( void )
     digitalWrite(LED_02, LOW);
     delay(100);
     digitalWrite(LED_03, LOW);
- 
-    Serial.begin(9600);
 }
 
 void
@@ -138,6 +244,12 @@ loop ( void )
                         eid = EID_MSG_BAD_CRC;
                     else
                         eid = EID_OK;
+                    // send ack to host
+                    resp_ack(eid);
+                    break;
+
+                case MSGT_SIG_READ:
+                    eid = process_read_signature();
                     break;
 
                 default:

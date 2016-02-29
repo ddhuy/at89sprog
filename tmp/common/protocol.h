@@ -34,6 +34,7 @@
 #define  MSGT_MEM_VERIFY     0x34
 #define  MSGT_MCU_LOCK_BIT   0x35
 #define  MSGT_MCU_READ       0x36
+#define  MSGT_SIG_READ       0x37
 
 
 /*******************************************************************

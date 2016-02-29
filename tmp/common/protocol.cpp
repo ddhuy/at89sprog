@@ -49,6 +49,12 @@ static ISP_EID
 msgdec_memw ( uint8_t* data_ptr,
               IspMessage* msg_ptr );
 
+static ISP_EID
+msgdec_sigr ( uint8_t* data_ptr,
+              IspMessage* msg_ptr );
+
+
+
 
 /*
  * Encoding functions
@@ -60,6 +66,11 @@ msgenc_ack ( IspMessage* msg_ptr,
 static ISP_EID
 msgenc_memw ( IspMessage* msg_ptr,
               uint8_t* data_ptr );
+
+static ISP_EID
+msgenc_sigr ( IspMessage* msg_ptr,
+              uint8_t* data_ptr );
+
 
 
 
@@ -77,6 +88,7 @@ static const EncDecEntry msgtype_table[] =
     { MSGT_MEM_VERIFY,    NULL,        NULL       },
     { MSGT_MCU_LOCK_BIT,  NULL,        NULL       },
     { MSGT_MCU_READ,      NULL,        NULL       },
+    { MSGT_SIG_READ,      msgenc_sigr, msgdec_sigr },
 
     { MSGT_NULL, NULL, NULL }, // end of table
 };
@@ -249,6 +261,52 @@ msgdec_memw ( uint8_t* data_ptr,
  */
 static ISP_EID
 msgenc_memw ( IspMessage* msg_ptr,
+              uint8_t* data_ptr )
+{
+    int i = 0;
+
+    if (msg_ptr == NULL || data_ptr == NULL)
+        return EID_ARG_NULL;
+
+    for (i = 0; i < msg_ptr->hdr.len; ++i)
+        data_ptr[i] = msg_ptr->msg.data[i];
+
+    return EID_OK;
+}
+
+/*
+ * Description:
+ *
+ * Input:
+ *
+ * Output:
+ *
+ */
+static ISP_EID
+msgdec_sigr ( uint8_t* data_ptr,
+              IspMessage* msg_ptr )
+{
+    uint16_t i = 0;
+
+    if (data_ptr == NULL || msg_ptr == NULL)
+        return EID_ARG_NULL;
+
+    for (i = 0; i < msg_ptr->hdr.len; ++i)
+        msg_ptr->msg.data[i] = data_ptr[i];
+
+    return EID_OK;
+}
+
+/*
+ * Description:
+ *
+ * Input:
+ *
+ * Output:
+ *
+ */
+static ISP_EID
+msgenc_sigr ( IspMessage* msg_ptr,
               uint8_t* data_ptr )
 {
     int i = 0;

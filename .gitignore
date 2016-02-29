@@ -1,2 +1,5 @@
 *.o
 at89sprog
+avr_prog.elf
+avr_prog.hex
+
