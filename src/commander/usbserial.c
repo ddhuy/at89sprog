@@ -138,6 +138,9 @@ usbserial_open ( char* dev_name,
     // wait for device reset & sync up
     usleep(1500 * 1000);
 
+    // clean all bytes in buffer
+    tcflush(dev_ptr->fd, TCIOFLUSH);
+
     return AT89S_EID_OK;
 } /* usbserial_open */
 
