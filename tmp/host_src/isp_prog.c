@@ -102,7 +102,7 @@ main ( int argc,
     memset(&serial_dev, 0, sizeof(SerialDevice));
 
     // prepare message header
-    ispmsg.hdr.typ = MSGT_SIG_READ;
+    ispmsg.hdr.typ = 0x07;
     ispmsg.hdr.len = 0;
     ispmsg.hdr.crc = 0x0000; 
 

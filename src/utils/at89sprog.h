@@ -75,6 +75,7 @@ typedef enum AT89S_EID_t
 
     AT89S_EID_PROT_INVALID_LEN,
     AT89S_EID_PROT_INVALID_CMD,
+    AT89S_EID_PROT_INVALID_CRC,
     AT89S_EID_PROT_BAD_MSG,
 
 } AT89S_EID;
@@ -108,8 +109,8 @@ typedef struct AT89S_Message_t
  */
 AT89S_EID
 enc_message ( AT89S_Message* at89s_msg,
-              uint8_t* data_buf,
-              uint8_t* data_len );
+              unsigned char* data_buf,
+              int* data_len );
 
 
 /*
@@ -121,8 +122,8 @@ enc_message ( AT89S_Message* at89s_msg,
  *
  */
 AT89S_EID
-dec_message ( uint8_t* data_buf,
-              uint8_t  data_len,
+dec_message ( unsigned char* data_buf,
+              int  data_len,
               AT89S_Message* at89s_msg );
 
 

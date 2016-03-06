@@ -8,7 +8,7 @@
 #include <getopt.h>
 #include <malloc.h>
 
-#include "at89s_types.h"
+#include "at89sprog.h"
 #include "usbserial.h"
 
 

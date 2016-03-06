@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "at89s_types.h"
+#include "at89sprog.h"
 
 
 
@@ -43,8 +43,8 @@
  */
 AT89S_EID
 enc_message ( AT89S_Message* msg_ptr,
-              uint8_t* data_buf,
-              uint8_t* data_len )
+              unsigned char* data_buf,
+              int* data_len )
 {
     int i = 0;
 
@@ -83,8 +83,8 @@ enc_message ( AT89S_Message* msg_ptr,
  *
  */
 AT89S_EID
-dec_message ( uint8_t* data_buf,
-              uint8_t  data_len,
+dec_message ( unsigned char* data_buf,
+              int  data_len,
               AT89S_Message* msg_ptr )
 {
     int i = 0;
