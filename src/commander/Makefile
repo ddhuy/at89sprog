@@ -3,7 +3,7 @@
 #
 TARGET = at89sprog
 WORKING_DIR = $(shell pwd)
-COMMON_DIR  = ${WORKING_DIR}/../common
+COMMON_DIR  = ${WORKING_DIR}/../utils
 BINARY_DIR  = ${WORKING_DIR}
 
 SRCS = $(shell ls ${WORKING_DIR}/*.c 2>/dev/null) \
