@@ -33,15 +33,14 @@ fsize ( FILE* pfile );
  */
 AT89S_EID
 hexio_readall ( char* filename,
-                unsigned char** data_pptr,
+                unsigned char* data_ptr,
                 int* data_len_ptr )
 {
     FILE* pfile = NULL;
-    unsigned char* data_ptr = NULL;
     int ipos = 0;
 
     if (filename == NULL
-        || data_pptr == NULL
+        || data_ptr == NULL
         || data_len_ptr == NULL)
     {
         return AT89S_EID_ARG_NULL;
@@ -62,15 +61,14 @@ hexio_readall ( char* filename,
         return AT89S_EID_HEXIO_LENGTH;
     }
 
-    // allocate enough memory to store whole file
-    data_ptr = (unsigned char*) malloc(*data_len_ptr);
-    if (data_ptr == NULL)
+    // check buffer size
+    if (*data_len_ptr >= AT89S_DATA_SIZE)
     {
         fclose(pfile);
-        return AT89S_EID_HEXIO_SMALL_BUFFER;
+        return AT89S_EID_BUF_SMALL;
     }
 
-     // read whole file to new allocated memory
+    // read whole file to new allocated memory
     ipos = fread(data_ptr, 1, *data_len_ptr, pfile);
     if (ipos <= 0)
     {
@@ -79,9 +77,7 @@ hexio_readall ( char* filename,
     }
 
     // end of function
-    *data_pptr = data_ptr;
     fclose(pfile);
-
     return AT89S_EID_OK;
 }
 

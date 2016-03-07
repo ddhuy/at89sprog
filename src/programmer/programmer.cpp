@@ -56,6 +56,12 @@ send_response ( unsigned char* buf,
 static AT89S_EID
 process_read_signature ( void );
 
+/*
+ *
+ */
+static AT89S_EID
+process_write_flash ( void );
+
 
 /*******************************************************************
  *
@@ -65,7 +71,7 @@ process_read_signature ( void );
 
 unsigned char data_buf[AT89S_MESSAGE_SIZE] = { 0 };
 int           data_len = 0;
-uint16_t  crc = 0x0000;
+uint16_t      crc = 0x0000;
 
 AT89S_EID     eid = AT89S_EID_NOK;
 AT89S_Message at89s_msg;
@@ -139,7 +145,7 @@ send_mcu_cmd ( char command )
     for (i = 7; i >= 0; --i)
     {
         digitalWrite(PIN_SCK, LOW);
-        delayMicroseconds(2);
+        delayMicroseconds(5);
 
         if ((command >> i) & 0x01)
             digitalWrite(PIN_MOSI, HIGH);
@@ -148,10 +154,13 @@ send_mcu_cmd ( char command )
 
         // pull high SCK to start write
         digitalWrite(PIN_SCK, HIGH); 
-        delayMicroseconds(2);
+        delayMicroseconds(5);
 
         ibyte |= (unsigned char) ((digitalRead(PIN_MISO) & 0x01) << i);
     }
+    // turn SCK back to default
+    digitalWrite(PIN_SCK, HIGH);
+
     return ibyte;
 }
 
@@ -175,7 +184,6 @@ send_response ( unsigned char* buf,
     while (byte_sent < len)
     {
         byte_sent = Serial.write(buf, len);
-        Serial.flush();
         if (byte_sent > 0)
         {
             buf += byte_sent;
@@ -199,33 +207,73 @@ send_response ( unsigned char* buf,
  *
  */
 static AT89S_EID
+process_write_flash ( void )
+{
+    unsigned char len = 0;
+
+    // reset target to reprogramming mode
+    digitalWrite(PIN_RST, HIGH);
+    delay(10);
+
+    // program enable
+    send_mcu_cmd(0xAC);
+    send_mcu_cmd(0x53);
+    send_mcu_cmd(0x00);
+    at89s_msg.data[len++] = send_mcu_cmd(0x69);
+    
+    // prepare acknowledge message
+    at89s_msg.cmd = AT89S_CMD_WRITE_FLS;
+    at89s_msg.len = len;
+    at89s_msg.crc = gen_crc16(at89s_msg.data, at89s_msg.len);
+
+    // encode message
+    eid = enc_message(&at89s_msg, data_buf, &data_len);
+    if (eid == AT89S_EID_OK)
+    {
+        // send message
+        eid = send_response(data_buf, AT89S_MESSAGE_SIZE);
+    }
+
+    return eid; 
+}
+
+
+/*
+ * Description:
+ *
+ * Input:
+ *
+ * Output:
+ *
+ */
+static AT89S_EID
 process_read_signature ( void )
 {
     unsigned char len = 0;
 
     // reset target to reprogramming mode
     digitalWrite(PIN_RST, HIGH);
-    delay(5);
+    delay(10);
 
     // program enable
-    at89s_msg.data[len++] = send_mcu_cmd(0xAC);
-    at89s_msg.data[len++] = send_mcu_cmd(0x53);
-    at89s_msg.data[len++] = send_mcu_cmd(0x00);
+    send_mcu_cmd(0xAC);
+    send_mcu_cmd(0x53);
+    send_mcu_cmd(0x00);
     at89s_msg.data[len++] = send_mcu_cmd(0x69);
     // read signature byte 1
-    at89s_msg.data[len++] = send_mcu_cmd(0x28);
-    at89s_msg.data[len++] = send_mcu_cmd(0x00);
-    at89s_msg.data[len++] = send_mcu_cmd(0x00);
+    send_mcu_cmd(0x28);
+    send_mcu_cmd(0x00);
+    send_mcu_cmd(0x00);
     at89s_msg.data[len++] = send_mcu_cmd(0x00);
     // read signature byte 2
-    at89s_msg.data[len++] = send_mcu_cmd(0x28);
-    at89s_msg.data[len++] = send_mcu_cmd(0x01);
-    at89s_msg.data[len++] = send_mcu_cmd(0x00);
+    send_mcu_cmd(0x28);
+    send_mcu_cmd(0x01);
+    send_mcu_cmd(0x00);
     at89s_msg.data[len++] = send_mcu_cmd(0x00);
     // read signature byte 3
-    at89s_msg.data[len++] = send_mcu_cmd(0x28);
-    at89s_msg.data[len++] = send_mcu_cmd(0x02);
-    at89s_msg.data[len++] = send_mcu_cmd(0x00);
+    send_mcu_cmd(0x28);
+    send_mcu_cmd(0x02);
+    send_mcu_cmd(0x00);
     at89s_msg.data[len++] = send_mcu_cmd(0x00);
     
 //    ibyte = send_mcu_command(0xAC53FF69);
@@ -241,17 +289,18 @@ process_read_signature ( void )
     // prepare acknowledge message
     at89s_msg.cmd = AT89S_CMD_READ_SIGN;
     at89s_msg.len = len;
-    at89s_msg.crc = gen_crc16(at89s_msg.data, at89s_msg.len);
+    at89s_msg.crc = 0x0000; 
+    //at89s_msg.crc = gen_crc16(at89s_msg.data, at89s_msg.len);
 
     // encode message
     eid = enc_message(&at89s_msg, data_buf, &data_len);
     if (eid == AT89S_EID_OK)
     {
         // send message
-        eid = send_response(data_buf, data_len);
+        eid = send_response(data_buf, AT89S_MESSAGE_SIZE);
     }
 
-    return AT89S_EID_OK; 
+    return eid; 
 }
 
 
@@ -321,34 +370,27 @@ loop ( void )
         data_buf[data_len++] = Serial.read();
     }
 
+    // decode & process message
     if (data_len >= AT89S_MESSAGE_SIZE)
     {
-        // decode message
         eid = dec_message(data_buf, data_len, &at89s_msg);
-        // process message
         if (eid == AT89S_EID_OK)
         {
-            switch(at89s_msg.cmd)
+            switch (at89s_msg.cmd)
             {
-                case AT89S_CMD_WRITE_FLS:
-                    // check crc
-                    crc = gen_crc16(at89s_msg.data, at89s_msg.len);
-                    if (crc == at89s_msg.crc)
-                        eid = AT89S_EID_OK;
-                    else
-                        eid = AT89S_EID_PROT_INVALID_CRC;
-                    // send ack to host
-                    break;
-
                 case AT89S_CMD_READ_SIGN:
                     eid = process_read_signature();
                     break;
 
+                case AT89S_CMD_WRITE_FLS:
+                    eid = process_write_flash();
+                    break;
+
                 default:
+                    eid = AT89S_EID_PROT_INVALID_CMD;
                     break;
             }
         }
-
         // toggle LED to display error
         error_handling(eid);
         // process done, continue receiving data

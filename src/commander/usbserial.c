@@ -43,15 +43,15 @@ usbserial_open ( char* dev_name,
     }
 
     if (baudrate != US_BAUDRATE_9600
-        || baudrate != US_BAUDRATE_19200
-        || baudrate != US_BAUDRATE_115200)
+        && baudrate != US_BAUDRATE_19200
+        && baudrate != US_BAUDRATE_115200)
     {
         return AT89S_EID_SERIAL_BAUDRATE_INVALID;
     }
 
     if (config != US_CONFIG_8N1
-        || config != US_CONFIG_7E1
-        || config != US_CONFIG_7O1)
+        && config != US_CONFIG_7E1
+        && config != US_CONFIG_7O1)
     {
         return AT89S_EID_SERIAL_CONFIG_INVALID;
     }
@@ -62,7 +62,7 @@ usbserial_open ( char* dev_name,
     // open device
     dev_ptr->fd = open (dev_ptr->name,
                         O_RDWR | O_NOCTTY | O_NDELAY | O_NONBLOCK);
-    if (dev_ptr->fd < 0)
+    if (dev_ptr->fd <= 0)
     {
         return AT89S_EID_SERIAL_OPEN;
     }
@@ -235,7 +235,7 @@ usbserial_recv ( UsbSerialDevice* dev_ptr,
     }
 
     // block reading
-    fcntl(dev_ptr->fd, F_SETFL, 0);
+    fcntl(dev_ptr->fd, F_SETFL, 1);
 
     // start receiving data
     while (read_byte < data_len)
@@ -248,8 +248,6 @@ usbserial_recv ( UsbSerialDevice* dev_ptr,
         {
             if (errno == EAGAIN)
                 continue;
-            else if (errno == ETIMEDOUT)
-                break;
             else
                 return AT89S_EID_SERIAL_RECV;
         }

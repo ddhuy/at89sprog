@@ -46,7 +46,7 @@ enc_message ( AT89S_Message* msg_ptr,
               unsigned char* data_buf,
               int* data_len )
 {
-    int i = 0;
+    int i = 0, len = 0;
 
     if (msg_ptr == NULL
         || data_buf == NULL
@@ -56,19 +56,20 @@ enc_message ( AT89S_Message* msg_ptr,
     }
 
     // encode header first
-    *data_len = 0;
-    data_buf[*data_len++] = msg_ptr->cmd;
-    data_buf[*data_len++] = msg_ptr->len;
-    data_buf[*data_len++] = (uint8_t) ((msg_ptr->crc & 0xFF00) >> 8);
-    data_buf[*data_len++] = (uint8_t) (msg_ptr->crc & 0x00FF);
+    data_buf[len++] = msg_ptr->cmd;
+    data_buf[len++] = msg_ptr->len;
+    data_buf[len++] = (uint8_t) ((msg_ptr->crc & 0xFF00) >> 8);
+    data_buf[len++] = (uint8_t) (msg_ptr->crc & 0x00FF);
 
     // encode message data
     for (i = 0; i < msg_ptr->len; ++i)
-        data_buf[*data_len++] = msg_ptr->data[i];
+        data_buf[len++] = msg_ptr->data[i];
 
     // insert padding byte to the rest
-    for (i = *data_len; i < AT89S_MESSAGE_SIZE; ++i)
-        data_buf[*data_len++] = AT89S_PADDING_BYTE;
+    for (i = len; i < AT89S_MESSAGE_SIZE; ++i)
+        data_buf[len++] = AT89S_PADDING_BYTE;
+
+    *data_len = len;
 
     return AT89S_EID_OK;
 }

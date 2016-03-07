@@ -56,6 +56,7 @@ typedef enum AT89S_EID_t
     AT89S_EID_ARG_INVALID,
 
     AT89S_EID_MEM_MALLOC,
+    AT89S_EID_BUF_SMALL,
 
     AT89S_EID_SERIAL_OPEN,
     AT89S_EID_SERIAL_CLOSE,
@@ -78,6 +79,8 @@ typedef enum AT89S_EID_t
     AT89S_EID_PROT_INVALID_CRC,
     AT89S_EID_PROT_BAD_MSG,
 
+    AT89S_MAX_EID,
+
 } AT89S_EID;
 
 
@@ -86,12 +89,20 @@ typedef enum AT89S_EID_t
  */
 typedef struct AT89S_Message_t
 {
-    uint8_t  cmd;
-    uint8_t  len;
-    uint16_t crc;
-    uint8_t  data[AT89S_DATA_SIZE];
+    unsigned char  cmd;
+    unsigned char  len;
+    unsigned short crc;
+    unsigned char  data[AT89S_DATA_SIZE];
 
 } AT89S_Message;
+
+
+/*******************************************************************
+ *
+ *      GLOBAL AT89S VARIABLES
+ *
+ ******************************************************************/
+extern const char* const AT89S_ERROR_MESSAGE[AT89S_MAX_EID];
 
 
 /*******************************************************************
