@@ -61,7 +61,7 @@ usbserial_open ( char* dev_name,
 
     // open device
     dev_ptr->fd = open (dev_ptr->name,
-                        O_RDWR | O_NOCTTY | O_NDELAY | O_NONBLOCK);
+                        O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (dev_ptr->fd <= 0)
     {
         return AT89S_EID_SERIAL_OPEN;
@@ -127,7 +127,7 @@ usbserial_open ( char* dev_name,
 
     // control character settings
     dev_ptr->tios.c_cc[VMIN]  = 1; // wait for 1 minimum chacacter received
-    dev_ptr->tios.c_cc[VTIME] = 0; // no timeout when waiting for charater
+    dev_ptr->tios.c_cc[VTIME] = 10; // no timeout when waiting for charater
 
     // commit new settings
     if (tcsetattr(dev_ptr->fd, TCSANOW, &dev_ptr->tios) < 0)
@@ -225,7 +225,7 @@ usbserial_recv ( UsbSerialDevice* dev_ptr,
                  unsigned char* data_ptr,
                  int data_len )
 {
-    int read_byte = 0;
+    int byte_read = 0;
     char b[1];
 
     if (dev_ptr == NULL
@@ -234,15 +234,12 @@ usbserial_recv ( UsbSerialDevice* dev_ptr,
         return AT89S_EID_ARG_NULL;
     }
 
-    // block reading
-    fcntl(dev_ptr->fd, F_SETFL, 1);
-
     // start receiving data
-    while (read_byte < data_len)
+    while (byte_read < data_len)
     {
         if (read(dev_ptr->fd, b, 1) > 0)
         {
-            data_ptr[read_byte++] = *b;
+            data_ptr[byte_read++] = *b;
         }
         else
         {

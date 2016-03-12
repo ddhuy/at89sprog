@@ -6,6 +6,7 @@
 #include <Arduino.h>
 
 #include "at89sprog.h"
+#include "at89s52.h"
 #include "crc16.h"
 
 
@@ -40,8 +41,8 @@ error_handling ( AT89S_EID eid );
 /*
  *
  */
-static char
-send_mcu_cmd ( char command );
+static unsigned long
+send_mcu_cmd ( unsigned long command );
 
 /*
  *
@@ -100,19 +101,19 @@ error_handling (AT89S_EID eid)
         digitalWrite(LED_01, LOW);
         delay(400);
     }
-    else if (eid == AT89S_EID_PROT_INVALID_LEN)
+    else if (eid == AT89S_EID_PROT_LEN)
     {
         digitalWrite(LED_01, HIGH);
         digitalWrite(LED_02, LOW);
         digitalWrite(LED_03, LOW);
     }
-    else if (eid == AT89S_EID_PROT_INVALID_CRC)
+    else if (eid == AT89S_EID_PROT_CRC)
     {
         digitalWrite(LED_01, LOW);
         digitalWrite(LED_02, HIGH);
         digitalWrite(LED_03, LOW);
     }
-    else if (eid == AT89S_EID_PROT_INVALID_CMD)
+    else if (eid == AT89S_EID_PROT_CMD)
     {
         digitalWrite(LED_01, LOW);
         digitalWrite(LED_02, LOW);
@@ -136,16 +137,15 @@ error_handling (AT89S_EID eid)
  * Output:
  * 
  */
-static char
-send_mcu_cmd ( char command )
+static unsigned long
+send_mcu_cmd ( unsigned long command )
 {
-    unsigned char ibyte = 0;
-    char i = 0;
+    unsigned long res = 0;
+    signed char i = 0;
 
-    for (i = 7; i >= 0; --i)
+    for (i = 31; i >= 0; --i)
     {
         digitalWrite(PIN_SCK, LOW);
-        delayMicroseconds(5);
 
         if ((command >> i) & 0x01)
             digitalWrite(PIN_MOSI, HIGH);
@@ -154,14 +154,13 @@ send_mcu_cmd ( char command )
 
         // pull high SCK to start write
         digitalWrite(PIN_SCK, HIGH); 
-        delayMicroseconds(5);
 
-        ibyte |= (unsigned char) ((digitalRead(PIN_MISO) & 0x01) << i);
+        res |= ((digitalRead(PIN_MISO) & 0x01) << i);
     }
     // turn SCK back to default
     digitalWrite(PIN_SCK, HIGH);
 
-    return ibyte;
+    return res;
 }
 
 /*
@@ -181,7 +180,7 @@ send_response ( unsigned char* buf,
     if (buf == NULL)
         return AT89S_EID_ARG_NULL;
 
-    while (byte_sent < len)
+    while (len > 0)
     {
         byte_sent = Serial.write(buf, len);
         if (byte_sent > 0)
@@ -193,7 +192,7 @@ send_response ( unsigned char* buf,
             break;
     }
 
-    if (byte_sent < len)
+    if (len != 0)
         return AT89S_EID_SERIAL_SEND;
     return AT89S_EID_OK;
 }
@@ -209,23 +208,29 @@ send_response ( unsigned char* buf,
 static AT89S_EID
 process_write_flash ( void )
 {
-    unsigned char len = 0;
+    unsigned char len = 0, i = 0;
+    unsigned long data = 0;
 
     // reset target to reprogramming mode
     digitalWrite(PIN_RST, HIGH);
     delay(10);
 
     // program enable
-    send_mcu_cmd(0xAC);
-    send_mcu_cmd(0x53);
-    send_mcu_cmd(0x00);
-    at89s_msg.data[len++] = send_mcu_cmd(0x69);
+    data = send_mcu_cmd(PROGRAM_ENABLE);
+    at89s_msg.data[len++] = ((unsigned char *) &data)[0];
+    // write hex data to MCU flash
+    for (i = 0; i < at89s_msg.len; ++i)
+    {
+        // always erase first
+
+        // then writing
+
+    }
     
     // prepare acknowledge message
     at89s_msg.cmd = AT89S_CMD_WRITE_FLS;
     at89s_msg.len = len;
     at89s_msg.crc = gen_crc16(at89s_msg.data, at89s_msg.len);
-
     // encode message
     eid = enc_message(&at89s_msg, data_buf, &data_len);
     if (eid == AT89S_EID_OK)
@@ -250,48 +255,26 @@ static AT89S_EID
 process_read_signature ( void )
 {
     unsigned char len = 0;
+    unsigned long res = 0x00000000;
 
     // reset target to reprogramming mode
     digitalWrite(PIN_RST, HIGH);
     delay(10);
 
-    // program enable
-    send_mcu_cmd(0xAC);
-    send_mcu_cmd(0x53);
-    send_mcu_cmd(0x00);
-    at89s_msg.data[len++] = send_mcu_cmd(0x69);
-    // read signature byte 1
-    send_mcu_cmd(0x28);
-    send_mcu_cmd(0x00);
-    send_mcu_cmd(0x00);
-    at89s_msg.data[len++] = send_mcu_cmd(0x00);
-    // read signature byte 2
-    send_mcu_cmd(0x28);
-    send_mcu_cmd(0x01);
-    send_mcu_cmd(0x00);
-    at89s_msg.data[len++] = send_mcu_cmd(0x00);
-    // read signature byte 3
-    send_mcu_cmd(0x28);
-    send_mcu_cmd(0x02);
-    send_mcu_cmd(0x00);
-    at89s_msg.data[len++] = send_mcu_cmd(0x00);
-    
-//    ibyte = send_mcu_command(0xAC53FF69);
-//    at89s_msg.data[len++] = ((unsigned char *) &ibyte)[0];
-//    ibyte = send_mcu_command(0x28000000);
-//    at89s_msg.data[len++] = ((unsigned char *) &ibyte)[0];
-//    ibyte = send_mcu_command(0x28010000);
-//    at89s_msg.data[len++] = ((unsigned char *) &ibyte)[0];
-//    ibyte = send_mcu_command(0x28020000);
-//    at89s_msg.data[len++] = ((unsigned char *) &ibyte)[0];
-
+    // read device signature
+    res = send_mcu_cmd(PROGRAM_ENABLE);
+    at89s_msg.data[len++] = ((unsigned char *) &res)[0];
+    res = send_mcu_cmd(READ_SIGNATURE_BYTE1);
+    at89s_msg.data[len++] = ((unsigned char *) &res)[0];
+    res = send_mcu_cmd(READ_SIGNATURE_BYTE2);
+    at89s_msg.data[len++] = ((unsigned char *) &res)[0];
+    res = send_mcu_cmd(READ_SIGNATURE_BYTE3);
+    at89s_msg.data[len++] = ((unsigned char *) &res)[0];
 
     // prepare acknowledge message
     at89s_msg.cmd = AT89S_CMD_READ_SIGN;
     at89s_msg.len = len;
-    at89s_msg.crc = 0x0000; 
-    //at89s_msg.crc = gen_crc16(at89s_msg.data, at89s_msg.len);
-
+    at89s_msg.crc = gen_crc16(at89s_msg.data, at89s_msg.len);
     // encode message
     eid = enc_message(&at89s_msg, data_buf, &data_len);
     if (eid == AT89S_EID_OK)
@@ -387,7 +370,7 @@ loop ( void )
                     break;
 
                 default:
-                    eid = AT89S_EID_PROT_INVALID_CMD;
+                    eid = AT89S_EID_PROT_CMD;
                     break;
             }
         }

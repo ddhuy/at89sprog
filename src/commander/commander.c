@@ -262,16 +262,16 @@ process_command ( AT89S_Type* conf_ptr )
 
     // clean message
     memset(&conf_ptr->at89s_msg, 0, sizeof(AT89S_Message));
-    //
+
     // prepare message
     if ((conf_ptr->arg_cmd & ARG_CMD_READ_FLS) == ARG_CMD_READ_FLS)
     {}
     else if ((conf_ptr->arg_cmd & ARG_CMD_WRITE_FLS) == ARG_CMD_WRITE_FLS)
     {
         // read hex file content
-        eid = hexio_readall(conf_ptr->in_fls_file,
-                            conf_ptr->at89s_msg.data,
-                            &conf_ptr->data_len);
+//        eid = hexio_read(conf_ptr->in_fls_file,
+//                         conf_ptr->at89s_msg.data,
+//                         &conf_ptr->data_len);
         if (eid == AT89S_EID_OK)
         {
             // prepare message header
@@ -317,13 +317,13 @@ process_command ( AT89S_Type* conf_ptr )
         if (eid == AT89S_EID_OK)
         {
             printf("Opened connection to device\n");
-            
             eid = enc_message(&conf_ptr->at89s_msg, conf_ptr->data_buf, &conf_ptr->data_len);
+
             if (eid == AT89S_EID_OK)
             {
                 printf("Encoded message successfully\n");
-
                 eid = usbserial_send(&conf_ptr->tty_dev, conf_ptr->data_buf, conf_ptr->data_len);
+
                 if (eid == AT89S_EID_OK)
                 {
                     printf("Sent message successfully\n");
@@ -338,6 +338,9 @@ process_command ( AT89S_Type* conf_ptr )
 } /* process_argument */
 
 
+/*
+ *
+ */
 AT89S_EID
 receive_message ( AT89S_Type* conf_ptr )
 {
@@ -383,6 +386,7 @@ show_usage ( void )
 {
     printf("Programg Usage\n");
 } /* show_usage */
+
 
 /*
  *
@@ -434,6 +438,7 @@ print_command ( AT89S_Type* conf_ptr )
         printf("Invalid command\n");
     }
 }
+
 
 /*******************************************************************
  *

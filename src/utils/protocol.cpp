@@ -97,7 +97,7 @@ dec_message ( unsigned char* data_buf,
     }
 
     if (data_len < AT89S_HEADER_SIZE)
-        return AT89S_EID_PROT_INVALID_LEN;
+        return AT89S_EID_PROT_LEN;
 
     // decode header
     msg_ptr->cmd  = data_buf[i++];
@@ -106,7 +106,7 @@ dec_message ( unsigned char* data_buf,
     msg_ptr->crc |= (uint16_t) (data_buf[i++] & 0x00FF);
 
     if (data_len < msg_ptr->len + AT89S_HEADER_SIZE)
-        return AT89S_EID_PROT_BAD_MSG;
+        return AT89S_EID_PROT_MSG;
 
     // decode message content
     for (i = 0; i < msg_ptr->len; ++i)
