@@ -2,4 +2,7 @@
 at89sprog
 *.elf
 *.hex
+src/.cproject
+src/.project
+src/.settings/
 
