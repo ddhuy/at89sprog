@@ -90,6 +90,8 @@ typedef enum AT89S_EID
     EID_REC_FMT,
     EID_REC_TYPE,
     EID_REC_CORRUPT,
+    EID_REC_EMPTY,
+    EID_REC_LEAK,
 
     EID_CMD_LEN,
     EID_CMD_BAD,
@@ -205,11 +207,11 @@ typedef struct AT89S_Msg_t
  *      API DECLARATION
  *
  ******************************************************************/
-AT89S_EID decode_msg ( char* data_buf,
+AT89S_EID msg_decode ( char* data_buf,
                        int   data_len,
                        AT89S_Msg_t* atmsg );
 
-AT89S_EID encode_msg ( AT89S_Msg_t* atmsg,
+AT89S_EID msg_encode ( AT89S_Msg_t* atmsg,
                        char* data_buf,
                        int* data_len );
 

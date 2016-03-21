@@ -44,7 +44,7 @@ int main ( int argc,
 
 
     // test encoder
-    eid = encode_msg(&atmsg, data_buf, &data_len);
+    eid = msg_encode(&atmsg, data_buf, &data_len);
     if (eid != EID_OK)
     {
         printf("Encode error: %d\n", eid);
@@ -59,7 +59,7 @@ int main ( int argc,
     // test decoder
     memset(&atmsg, 0, sizeof(AT89S_Msg_t));
 
-    eid = decode_msg(data_buf, data_len, &atmsg);
+    eid = msg_decode(data_buf, data_len, &atmsg);
     if (eid != EID_OK)
     {
         printf("Decode error: %d\n", eid);

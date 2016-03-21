@@ -101,7 +101,7 @@ MsgDecoder  msg_decoders[] =
  *
  */
 AT89S_EID
-decode_msg ( char* data_buf,
+msg_decode ( char* data_buf,
              int   data_len,
              AT89S_Msg_t* atmsg )
 {

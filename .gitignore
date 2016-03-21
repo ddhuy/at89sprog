@@ -1,5 +1,6 @@
 *.o
 at89sprog
+at89scmd
 *.elf
 *.hex
 src/.cproject

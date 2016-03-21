@@ -98,7 +98,7 @@ MsgEncoder  msg_encoders[] =
  *
  */
 AT89S_EID
-encode_msg ( AT89S_Msg_t* atmsg,
+msg_encode ( AT89S_Msg_t* atmsg,
              char* data_buf,
              int* data_len )
 {
