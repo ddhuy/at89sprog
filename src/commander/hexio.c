@@ -48,7 +48,7 @@ destroy_record ( IHex_Record_t* record_ptr );
  *
  */
 static AT89S_EID
-read_record ( FILE* pfile, IHex_Record_t** record_ptr );
+read_record ( FILE* pfile, IHex_Record_t* record_ptr );
 
 /*
  *
@@ -95,7 +95,7 @@ ihex_load ( char* filename,
             eid = create_record(&record_ptr);
             if (eid == EID_OK)
             {
-                eid = read_record(pfile, &record_ptr);
+                eid = read_record(pfile, record_ptr);
                 if (eid == EID_OK)
                 {
                     eid = insert_record_tail(hexfile_ptr, record_ptr);
@@ -222,18 +222,14 @@ destroy_record ( IHex_Record_t* record_ptr )
  *
  */
 static AT89S_EID
-read_record ( FILE* pfile, IHex_Record_t** record_ptr )
+read_record ( FILE* pfile, IHex_Record_t* record_ptr )
 {
-    IHex_Record_t* rec_ptr = NULL;
-    int nitem = 0, i = 0;
-    uint8_t bcount, haddr, laddr, rectype;
+    uint32_t nitem = 0, i = 0;
+    uint32_t bcount, haddr, laddr, rectype, read_byte;
     uint8_t crc = 0;
 
-    if (pfile == NULL || record_ptr == NULL || *record_ptr == NULL)
+    if (pfile == NULL || record_ptr == NULL)
         return EID_ARG_NULL;
-
-    // get shortcut to the output
-    rec_ptr = *record_ptr;
 
     // read record header
     nitem = fscanf(pfile,
@@ -245,21 +241,22 @@ read_record ( FILE* pfile, IHex_Record_t** record_ptr )
     }
 
     // parse & assign record header
-    rec_ptr->length  = bcount;
-    rec_ptr->address = ((haddr << 8) | laddr);
-    rec_ptr->rectype = rectype;
+    record_ptr->length  = bcount;
+    record_ptr->address = ((haddr << 8) | laddr);
+    record_ptr->rectype = rectype;
 
     // read record data
-    rec_ptr->data = (uint8_t *) malloc(bcount);
-    if (rec_ptr->data == NULL)
+    record_ptr->data = (uint8_t *) malloc(bcount);
+    if (record_ptr->data == NULL)
         return EID_MEM_ALLOC;
 
     for (i = 0; i < bcount; ++i)
     {
-        nitem = fscanf(pfile, "%02x", &rec_ptr->data[i]);
+        nitem = fscanf(pfile, "%02x", &read_byte);
         if (nitem == 1)
         {
-            crc += rec_ptr->data[i];
+            record_ptr->data[i] = read_byte;
+            crc += record_ptr->data[i];
         }
         else
         {
@@ -268,16 +265,18 @@ read_record ( FILE* pfile, IHex_Record_t** record_ptr )
     }
 
     // read record CRC
-    nitem = fscanf(pfile, "%02x\n", &rec_ptr->chksum);
+    nitem = fscanf(pfile, "%02x\n", &read_byte);
     if (nitem != 1)
     {
         return EID_REC_FMT;
     }
 
+    record_ptr->chksum = read_byte;
+
     // calculate & verify CRC
     crc += bcount + haddr + laddr + rectype;
     crc = ~crc + 1;
-    if (crc != rec_ptr->chksum)
+    if (crc != record_ptr->chksum)
     {
         return EID_REC_CRC;
     }

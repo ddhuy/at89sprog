@@ -24,9 +24,6 @@
 #define  IHEX_REC_EXT_LINE_ADDR    0x04
 #define  IHEX_REC_START_LINE_ADDR  0x05
 
-#define  NAME_MAX    256
-
-
 /*******************************************************************
  *
  *      DATA TYPE
@@ -37,12 +34,11 @@
  */
 typedef struct IHex_Record_t
 {
-    uint8_t   start_code;
     uint8_t   length;
-    uint16_t  address;
     uint8_t   rectype;
-    uint8_t*  data;
     uint8_t   chksum;
+    uint16_t  address;
+    uint8_t*  data;
 
     struct IHex_Record_t* pnext;
 

@@ -6,6 +6,7 @@
 
 #include "hexio.h"
 
+
 int main ( int argc,
            char** argv )
 {
@@ -13,8 +14,12 @@ int main ( int argc,
     IHex_File_t hexfile;
     IHex_Record_t* record_ptr = NULL;
 
-    memset(&hexfile, 0, sizeof(IHex_File_t));
+    // init IHEX File structure
+    hexfile.no_record = 0;
+    hexfile.record_phead = NULL;
+    hexfile.record_ptail = NULL;
 
+    // read hex file
     eid = ihex_load(argv[1], &hexfile);
     if (eid == EID_OK)
     {
