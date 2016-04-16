@@ -200,13 +200,8 @@ serial_recv( SerialDevice_t* serial_ptr,
 
     while (read_byte < data_len)
     {
-        read_byte += read(serial_ptr->devfd, data_buf, data_len);
-        if (read_byte == data_len)
-//        if (read(serial_ptr->devfd, b, 1) == 1)
-        {
-//            data_buf[read_byte++] = *b;
-        }
-        else if (errno != EAGAIN)
+        read_byte += read(serial_ptr->devfd, data_buf + read_byte, data_len);
+        if (errno != EAGAIN)
         {
             return EID_SERIAL_RECV;
         }

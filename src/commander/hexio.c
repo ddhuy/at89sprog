@@ -105,11 +105,15 @@ ihex_load ( char* filename,
                     }
                     else
                     {
-                        destroy_record(record_ptr);
-                        break;
+                        // reverse
                     }
                 }
                 else
+                {
+                    // reverse
+                }
+
+                if (eid != EID_OK)
                 {
                     destroy_record(record_ptr);
                     break;
