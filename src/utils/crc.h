@@ -31,5 +31,6 @@
 #include <stdint.h>
 
 uint16_t gen_crc16(uint8_t* buf, int len);
+uint8_t  gen_crc8(uint8_t* buf, int len);
 
 #endif /* _CRC16_H_ */

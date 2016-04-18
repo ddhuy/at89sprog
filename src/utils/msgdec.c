@@ -101,7 +101,7 @@ MsgDecoder  msg_decoders[] =
  *
  */
 AT89S_EID
-msg_decode ( char* data_buf,
+decode_msg ( char* data_buf,
              int   data_len,
              AT89S_Msg_t* atmsg )
 {
@@ -156,7 +156,7 @@ dec_c_rsign ( char* data_buf,
     if (data_buf == NULL || atmsg == NULL)
         return EID_ARG_NULL;
 
-    atmsg->data.cmd_read_sign.signature_type = data_buf[data_len++];
+    atmsg->data.msg_read_sign.type = data_buf[data_len++];
 
     return EID_OK;
 }
@@ -178,9 +178,9 @@ dec_r_rsign ( char* data_buf,
     if (data_buf == NULL || atmsg == NULL)
         return EID_ARG_NULL;
 
-    atmsg->data.res_read_sign.signature[0] = data_buf[data_len++];
-    atmsg->data.res_read_sign.signature[1] = data_buf[data_len++];
-    atmsg->data.res_read_sign.signature[2] = data_buf[data_len++];
+    atmsg->data.msg_read_sign.signature[0] = data_buf[data_len++];
+    atmsg->data.msg_read_sign.signature[1] = data_buf[data_len++];
+    atmsg->data.msg_read_sign.signature[2] = data_buf[data_len++];
 
     return EID_OK;
 }
@@ -203,16 +203,15 @@ dec_c_wmem ( char* data_buf,
     if (data_buf == NULL || atmsg == NULL)
         return EID_ARG_NULL;
 
-    atmsg->data.cmd_write_mem.memtype   = data_buf[data_len++];
-    atmsg->data.cmd_write_mem.address   = ((data_buf[data_len++] & 0x00FF) << 8);
-    atmsg->data.cmd_write_mem.address  |= (data_buf[data_len++] & 0x00FF);
-    atmsg->data.cmd_write_mem.size      = data_buf[data_len++];
-    atmsg->data.cmd_write_mem.crc       = ((data_buf[data_len++] & 0x00FF) << 8);
-    atmsg->data.cmd_write_mem.crc      |= (data_buf[data_len++] & 0x00FF);
+    atmsg->data.msg_write_mem.address   = ((data_buf[data_len++] & 0x00FF) << 8);
+    atmsg->data.msg_write_mem.address  |= (data_buf[data_len++] & 0x00FF);
+    atmsg->data.msg_write_mem.memtype   = data_buf[data_len++];
+    atmsg->data.msg_write_mem.size      = data_buf[data_len++];
+    atmsg->data.msg_write_mem.crc      |= (data_buf[data_len++] & 0x00FF);
 
-    for (i = 0; i < atmsg->data.cmd_write_mem.size; ++i)
-        atmsg->data.cmd_write_mem.data[i] = data_buf[i + data_len];
-    data_len += atmsg->data.cmd_write_mem.size;
+    for (i = 0; i < atmsg->data.msg_write_mem.size; ++i)
+        atmsg->data.msg_write_mem.data[i] = data_buf[i + data_len];
+    data_len += atmsg->data.msg_write_mem.size;
 
     return EID_OK;
 }
@@ -232,6 +231,9 @@ dec_r_wmem ( char* data_buf,
 {
     if (data_buf == NULL || atmsg == NULL)
         return EID_ARG_NULL;
+
+    if (data_len < 0)
+        return EID_CMD_LEN;
 
     return EID_OK;
 }

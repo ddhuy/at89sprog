@@ -35,6 +35,9 @@
 #define  RES_R_USIG    0x50
 #define  RES_W_USIG    0x60
 
+#define  CMD_MASK    0x0F
+#define  RES_MASK    0xF0
+
 #define  PADDING_BYTE  0x21
 
 #define  MEM_FLS       0x00
@@ -107,90 +110,58 @@ typedef enum AT89S_EID
 /*
  * Command Read Signature
  */
-typedef struct Cmd_ReadSign_t
+typedef struct Msg_ReadSign_t
 {
-    uint8_t signature_type;
+    uint8_t  type;
+    uint8_t  signature[3];
 
-} Cmd_ReadSign_t;
+} Msg_ReadSign_t;
 
 /*
  * Command Write Signature
  */
-typedef struct Cmd_WriteSign_t
+typedef struct Msg_WriteSign_t
 {
     uint8_t signature[3];
 
-} Cmd_WriteSign_t;
+} Msg_WriteSign_t;
 
 /*
  * Command Read Memory
  */
-typedef struct Cmd_ReadMem_t
+typedef struct Msg_ReadMem_t
 {
-    uint8_t   memtype;
     uint16_t  address;
+    uint8_t   memtype;
     uint8_t   size;
+    uint8_t   data[DATA_SIZE - 4];
 
-} Cmd_ReadMem_t;
+} Msg_ReadMem_t;
 
 /*
  * Command Write Memory
  */
-typedef struct Cmd_WriteMem_t
+typedef struct Msg_WriteMem_t
 {
-    uint8_t   memtype;
     uint16_t  address;
+    uint8_t   memtype;
     uint8_t   size;
-    uint16_t  crc;
-    uint8_t   data[DATA_SIZE - 6];
+    uint8_t   crc;
+    uint8_t   data[DATA_SIZE - 5];
 
-} Cmd_WriteMem_t;
+} Msg_WriteMem_t;
 
 /*
  * Command Erase Memory
  */
-typedef struct Cmd_EraseMem_t
+typedef struct Msg_EraseMem_t
 {
-    uint8_t   memtype;
     uint16_t  address;
+    uint8_t   memtype;
     uint8_t   size;
 
-} Cmd_EraseMem_t;
+} Msg_EraseMem_t;
 
-
-/*
- * Response Read Memory
- */
-typedef struct Res_ReadMem_t
-{
-    uint8_t  size;
-    uint16_t crc;
-    uint8_t  data[DATA_SIZE - 3];
-
-} Res_ReadMem_t;
-
-/*
- * Response Read Signature
- */
-typedef struct Res_ReadSign_t
-{
-    uint8_t  signature[3];
-
-} Res_ReadSign_t;
-
-/*
- * Message Data
- */
-typedef union
-{
-    Cmd_ReadMem_t   cmd_read_mem;
-    Cmd_WriteMem_t  cmd_write_mem;
-    Cmd_EraseMem_t  cmd_erase_mem;
-    Cmd_ReadSign_t  cmd_read_sign;
-    Cmd_WriteSign_t cmd_write_sign;
-    Res_ReadSign_t  res_read_sign;
-    Res_ReadMem_t   res_read_mem;
-} MsgData_t;
 
 /*
  * AT89S Command Message
@@ -198,7 +169,21 @@ typedef union
 typedef struct AT89S_Msg_t
 {
     uint8_t msgt;
-    MsgData_t data;
+
+    /*
+     * Message Data
+     */
+    union MsgData_t
+    {
+        Msg_ReadMem_t   msg_read_mem;
+        Msg_WriteMem_t  msg_write_mem;
+        Msg_EraseMem_t  msg_erase_mem;
+        Msg_ReadSign_t  msg_read_sign;
+        Msg_WriteSign_t msg_write_sign;
+
+        uint8_t d[DATA_SIZE];
+
+    } data;
 
 } AT89S_Msg_t;
 
@@ -207,11 +192,11 @@ typedef struct AT89S_Msg_t
  *      API DECLARATION
  *
  ******************************************************************/
-AT89S_EID msg_decode ( char* data_buf,
+AT89S_EID decode_msg ( char* data_buf,
                        int   data_len,
                        AT89S_Msg_t* atmsg );
 
-AT89S_EID msg_encode ( AT89S_Msg_t* atmsg,
+AT89S_EID encode_msg ( AT89S_Msg_t* atmsg,
                        char* data_buf,
                        int* data_len );
 

@@ -13,6 +13,8 @@
 
 
 
+
+
 /*******************************************************************
  *
  *      FUNCTION DEFINITION
@@ -109,8 +111,6 @@ serial_open ( char* ttyfile,
 
     // wait for device reset & sync up
     usleep(1500 * 1000);
-    // clean up buffer
-    tcflush(serial_ptr->devfd, TCIOFLUSH);
 
     return EID_OK;
 
@@ -196,12 +196,23 @@ serial_recv( SerialDevice_t* serial_ptr,
     char b[1];
 
     if (serial_ptr == NULL || data_buf == NULL)
-        return EID_ARG_NULL;
-
-    while (read_byte < data_len)
     {
-        read_byte += read(serial_ptr->devfd, data_buf + read_byte, data_len);
-        if (errno != EAGAIN)
+        return EID_ARG_NULL;
+    }
+
+//    while (data_len--)
+    {
+        read_byte = read(serial_ptr->devfd, b, 1);
+        if (errno == 0)
+        {
+            if (read_byte == 1)
+                *data_buf++ = *b;
+        }
+        else if (errno == EAGAIN)
+        {
+            usleep(1000);
+        }
+        else
         {
             return EID_SERIAL_RECV;
         }
@@ -210,4 +221,5 @@ serial_recv( SerialDevice_t* serial_ptr,
     return EID_OK;
 
 } /* serial_recv */
+
 

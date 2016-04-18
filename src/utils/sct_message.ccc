@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 #include "at89s.h"
-#include "crc16.h"
+#include "crc.h"
 
 int main ( int argc,
            char** argv )
@@ -22,29 +22,28 @@ int main ( int argc,
      * data sample
      */
     atmsg.msgt = CMD_W_MEM;
-    atmsg.data.cmd_write_mem.memtype = MEM_RAM;
-    atmsg.data.cmd_write_mem.size    = 10;
-    atmsg.data.cmd_write_mem.address = 0xABBA;
-    atmsg.data.cmd_write_mem.data[0] = 0x01;
-    atmsg.data.cmd_write_mem.data[1] = 0x02;
-    atmsg.data.cmd_write_mem.data[2] = 0x03;
-    atmsg.data.cmd_write_mem.data[3] = 0x04;
-    atmsg.data.cmd_write_mem.data[4] = 0x05;
-    atmsg.data.cmd_write_mem.data[5] = 0x06;
-    atmsg.data.cmd_write_mem.data[6] = 0x07;
-    atmsg.data.cmd_write_mem.data[7] = 0x08;
-    atmsg.data.cmd_write_mem.data[8] = 0x09;
-    atmsg.data.cmd_write_mem.data[9] = 0x0A;
-    atmsg.data.cmd_write_mem.crc     = gen_crc16(atmsg.data.cmd_write_mem.data, 10);
+    atmsg.data.msg_write_mem.memtype = MEM_RAM;
+    atmsg.data.msg_write_mem.size    = 10;
+    atmsg.data.msg_write_mem.address = 0xABBA;
+    atmsg.data.msg_write_mem.data[0] = 0x01;
+    atmsg.data.msg_write_mem.data[1] = 0x02;
+    atmsg.data.msg_write_mem.data[2] = 0x03;
+    atmsg.data.msg_write_mem.data[3] = 0x04;
+    atmsg.data.msg_write_mem.data[4] = 0x05;
+    atmsg.data.msg_write_mem.data[5] = 0x06;
+    atmsg.data.msg_write_mem.data[6] = 0x07;
+    atmsg.data.msg_write_mem.data[7] = 0x08;
+    atmsg.data.msg_write_mem.data[8] = 0x09;
+    atmsg.data.msg_write_mem.data[9] = 0x0A;
+    atmsg.data.msg_write_mem.crc     = gen_crc8(atmsg.data.msg_write_mem.data, 10);
 
     printf("Raw data:\n");
     for (int i = 0; i < MSG_SIZE; ++i)
         printf("%04X ", ((unsigned char *) &atmsg)[i]);
     printf("\n\n");
 
-
     // test encoder
-    eid = msg_encode(&atmsg, data_buf, &data_len);
+    eid = encode_msg(&atmsg, data_buf, &data_len);
     if (eid != EID_OK)
     {
         printf("Encode error: %d\n", eid);
@@ -58,8 +57,7 @@ int main ( int argc,
 
     // test decoder
     memset(&atmsg, 0, sizeof(AT89S_Msg_t));
-
-    eid = msg_decode(data_buf, data_len, &atmsg);
+    eid = decode_msg(data_buf, data_len, &atmsg);
     if (eid != EID_OK)
     {
         printf("Decode error: %d\n", eid);
@@ -68,12 +66,12 @@ int main ( int argc,
 
     printf("Decoded data len: %d\n", data_len);
     printf("MsgType : %04X\n", atmsg.msgt);
-    printf("MemType : %04X\n", atmsg.data.cmd_write_mem.memtype);
-    printf("MemSize : %04X\n", atmsg.data.cmd_write_mem.size);
-    printf("Address : %04X\n", atmsg.data.cmd_write_mem.address);
-    printf("CRC     : %04X\n", atmsg.data.cmd_write_mem.crc);
-    for (int i = 0; i < atmsg.data.cmd_write_mem.size; ++i)
-        printf("%04X ", atmsg.data.cmd_write_mem.data[i]);
+    printf("MemType : %04X\n", atmsg.data.msg_write_mem.memtype);
+    printf("MemSize : %04X\n", atmsg.data.msg_write_mem.size);
+    printf("Address : %04X\n", atmsg.data.msg_write_mem.address);
+    printf("CRC     : %04X\n", atmsg.data.msg_write_mem.crc);
+    for (int i = 0; i < atmsg.data.msg_write_mem.size; ++i)
+        printf("%04X ", atmsg.data.msg_write_mem.data[i]);
     printf("\n");
 
     return 0;

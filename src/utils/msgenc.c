@@ -98,7 +98,7 @@ MsgEncoder  msg_encoders[] =
  *
  */
 AT89S_EID
-msg_encode ( AT89S_Msg_t* atmsg,
+encode_msg ( AT89S_Msg_t* atmsg,
              char* data_buf,
              int* data_len )
 {
@@ -160,7 +160,7 @@ enc_c_rsig ( AT89S_Msg_t* atmsg,
     if (atmsg == NULL || data_buf == NULL || data_len == NULL)
         return EID_ARG_NULL;
 
-    data_buf[(*data_len)++] = atmsg->data.cmd_read_sign.signature_type;
+    data_buf[(*data_len)++] = atmsg->data.msg_read_sign.type;
 
     return EID_OK;
 }
@@ -183,9 +183,9 @@ enc_r_rsig ( AT89S_Msg_t* atmsg,
     if (atmsg == NULL || data_buf == NULL || data_len == NULL)
         return EID_ARG_NULL;
 
-    data_buf[(*data_len)++] = atmsg->data.res_read_sign.signature[0];
-    data_buf[(*data_len)++] = atmsg->data.res_read_sign.signature[1];
-    data_buf[(*data_len)++] = atmsg->data.res_read_sign.signature[2];
+    data_buf[(*data_len)++] = atmsg->data.msg_read_sign.signature[0];
+    data_buf[(*data_len)++] = atmsg->data.msg_read_sign.signature[1];
+    data_buf[(*data_len)++] = atmsg->data.msg_read_sign.signature[2];
 
     return EID_OK;
 }
@@ -208,16 +208,15 @@ enc_c_wmem ( AT89S_Msg_t* atmsg,
     if (atmsg == NULL || data_buf == NULL || data_len == NULL)
         return EID_ARG_NULL;
 
-    data_buf[(*data_len)++] = atmsg->data.cmd_write_mem.memtype;
-    data_buf[(*data_len)++] = ((atmsg->data.cmd_write_mem.address & 0xFF00) >> 8);
-    data_buf[(*data_len)++] = (atmsg->data.cmd_write_mem.address & 0x00FF);
-    data_buf[(*data_len)++] = atmsg->data.cmd_write_mem.size;
-    data_buf[(*data_len)++] = ((atmsg->data.cmd_write_mem.crc & 0xFF00) >> 8);
-    data_buf[(*data_len)++] = (atmsg->data.cmd_write_mem.crc & 0X00FF);
+    data_buf[(*data_len)++] = ((atmsg->data.msg_write_mem.address & 0xFF00) >> 8);
+    data_buf[(*data_len)++] = (atmsg->data.msg_write_mem.address & 0x00FF);
+    data_buf[(*data_len)++] = atmsg->data.msg_write_mem.memtype;
+    data_buf[(*data_len)++] = atmsg->data.msg_write_mem.size;
+    data_buf[(*data_len)++] = (atmsg->data.msg_write_mem.crc & 0X00FF);
 
-    for (i = 0; i < atmsg->data.cmd_write_mem.size; ++i)
+    for (i = 0; i < atmsg->data.msg_write_mem.size; ++i)
     {
-        data_buf[(*data_len)++] = atmsg->data.cmd_write_mem.data[i];
+        data_buf[(*data_len)++] = atmsg->data.msg_write_mem.data[i];
     }
 
 
