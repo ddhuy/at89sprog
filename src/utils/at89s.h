@@ -47,6 +47,9 @@
 #define  SIGN_DEV      0x00
 #define  SIGN_USR      0x01
 
+#define  BYTE_MODE     0x01
+#define  PAGE_MODE     0x02
+
 
 /*
  * Maximum packet size
@@ -108,59 +111,30 @@ typedef enum AT89S_EID
 } AT89S_EID;
 
 /*
- * Command Read Signature
+ * Command Signature
  */
-typedef struct Msg_ReadSign_t
+typedef struct Msg_Signature_t
 {
-    uint8_t  type;
-    uint8_t  signature[3];
+    uint8_t type;
+    uint8_t signature[4];
 
-} Msg_ReadSign_t;
+} Msg_Signature_t;
 
 /*
- * Command Write Signature
+ * Command Memory
  */
-typedef struct Msg_WriteSign_t
-{
-    uint8_t signature[3];
-
-} Msg_WriteSign_t;
-
-/*
- * Command Read Memory
- */
-typedef struct Msg_ReadMem_t
+typedef struct Msg_Memmory_t
 {
     uint16_t  address;
+    uint8_t   mode;
     uint8_t   memtype;
-    uint8_t   size;
-    uint8_t   data[DATA_SIZE - 4];
-
-} Msg_ReadMem_t;
-
-/*
- * Command Write Memory
- */
-typedef struct Msg_WriteMem_t
-{
-    uint16_t  address;
-    uint8_t   memtype;
+    uint8_t   rectype;
     uint8_t   size;
     uint8_t   crc;
-    uint8_t   data[DATA_SIZE - 5];
+//    uint8_t   data[DATA_SIZE - 7];
+    uint8_t data[256];
 
-} Msg_WriteMem_t;
-
-/*
- * Command Erase Memory
- */
-typedef struct Msg_EraseMem_t
-{
-    uint16_t  address;
-    uint8_t   memtype;
-    uint8_t   size;
-
-} Msg_EraseMem_t;
+} Msg_Memory_t;
 
 
 /*
@@ -175,11 +149,8 @@ typedef struct AT89S_Msg_t
      */
     union MsgData_t
     {
-        Msg_ReadMem_t   msg_read_mem;
-        Msg_WriteMem_t  msg_write_mem;
-        Msg_EraseMem_t  msg_erase_mem;
-        Msg_ReadSign_t  msg_read_sign;
-        Msg_WriteSign_t msg_write_sign;
+        Msg_Signature_t  msg_signature;
+        Msg_Memory_t     msg_memory;
 
         uint8_t d[DATA_SIZE];
 

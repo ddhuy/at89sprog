@@ -156,7 +156,7 @@ dec_c_rsign ( char* data_buf,
     if (data_buf == NULL || atmsg == NULL)
         return EID_ARG_NULL;
 
-    atmsg->data.msg_read_sign.type = data_buf[data_len++];
+    atmsg->data.msg_signature.type = data_buf[data_len++];
 
     return EID_OK;
 }
@@ -178,9 +178,10 @@ dec_r_rsign ( char* data_buf,
     if (data_buf == NULL || atmsg == NULL)
         return EID_ARG_NULL;
 
-    atmsg->data.msg_read_sign.signature[0] = data_buf[data_len++];
-    atmsg->data.msg_read_sign.signature[1] = data_buf[data_len++];
-    atmsg->data.msg_read_sign.signature[2] = data_buf[data_len++];
+    atmsg->data.msg_signature.signature[0] = data_buf[data_len++];
+    atmsg->data.msg_signature.signature[1] = data_buf[data_len++];
+    atmsg->data.msg_signature.signature[2] = data_buf[data_len++];
+    atmsg->data.msg_signature.signature[3] = data_buf[data_len++];
 
     return EID_OK;
 }
@@ -203,15 +204,17 @@ dec_c_wmem ( char* data_buf,
     if (data_buf == NULL || atmsg == NULL)
         return EID_ARG_NULL;
 
-    atmsg->data.msg_write_mem.address   = ((data_buf[data_len++] & 0x00FF) << 8);
-    atmsg->data.msg_write_mem.address  |= (data_buf[data_len++] & 0x00FF);
-    atmsg->data.msg_write_mem.memtype   = data_buf[data_len++];
-    atmsg->data.msg_write_mem.size      = data_buf[data_len++];
-    atmsg->data.msg_write_mem.crc      |= (data_buf[data_len++] & 0x00FF);
+    atmsg->data.msg_memory.address   = ((data_buf[data_len++] & 0x00FF) << 8);
+    atmsg->data.msg_memory.address  |= (data_buf[data_len++] & 0x00FF);
+    atmsg->data.msg_memory.mode       = data_buf[data_len++];
+    atmsg->data.msg_memory.memtype   = data_buf[data_len++];
+    atmsg->data.msg_memory.rectype   = data_buf[data_len++];
+    atmsg->data.msg_memory.crc       = data_buf[data_len++];
+    atmsg->data.msg_memory.size      = data_buf[data_len++];
 
-    for (i = 0; i < atmsg->data.msg_write_mem.size; ++i)
-        atmsg->data.msg_write_mem.data[i] = data_buf[i + data_len];
-    data_len += atmsg->data.msg_write_mem.size;
+    for (i = 0; i < atmsg->data.msg_memory.size; ++i)
+        atmsg->data.msg_memory.data[i] = data_buf[i + data_len];
+    data_len += atmsg->data.msg_memory.size;
 
     return EID_OK;
 }
