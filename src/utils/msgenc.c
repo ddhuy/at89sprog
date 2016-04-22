@@ -183,10 +183,10 @@ enc_r_rsig ( AT89S_Msg_t* atmsg,
     if (atmsg == NULL || data_buf == NULL || data_len == NULL)
         return EID_ARG_NULL;
 
+    data_buf[(*data_len)++] = atmsg->data.msg_signature.type;
     data_buf[(*data_len)++] = atmsg->data.msg_signature.signature[0];
     data_buf[(*data_len)++] = atmsg->data.msg_signature.signature[1];
     data_buf[(*data_len)++] = atmsg->data.msg_signature.signature[2];
-    data_buf[(*data_len)++] = atmsg->data.msg_signature.signature[3];
 
     return EID_OK;
 }

@@ -178,10 +178,10 @@ dec_r_rsign ( char* data_buf,
     if (data_buf == NULL || atmsg == NULL)
         return EID_ARG_NULL;
 
+    atmsg->data.msg_signature.type         = data_buf[data_len++];
     atmsg->data.msg_signature.signature[0] = data_buf[data_len++];
     atmsg->data.msg_signature.signature[1] = data_buf[data_len++];
     atmsg->data.msg_signature.signature[2] = data_buf[data_len++];
-    atmsg->data.msg_signature.signature[3] = data_buf[data_len++];
 
     return EID_OK;
 }

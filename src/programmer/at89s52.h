@@ -44,7 +44,7 @@
 #define  T_OVSH      T_CLCL // Nanosecond
 #define  T_SHOX      (2 * T_CLCL) // Nanosecond
 #define  T_SLIV      (16) // Nanosecond
-#define  T_ERASE     (500000) // 500000 microsecond = 500 Millisecond
+#define  T_ERASE     (500) // 500000 microsecond = 500 Millisecond
 #define  T_SWC       (64 * T_CLCL + 400) // Microsecond
 #define  T_RESET     (1000) // Microsecond
 

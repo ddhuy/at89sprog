@@ -116,7 +116,7 @@ typedef enum AT89S_EID
 typedef struct Msg_Signature_t
 {
     uint8_t type;
-    uint8_t signature[4];
+    uint8_t signature[3];
 
 } Msg_Signature_t;
 
