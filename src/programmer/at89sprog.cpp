@@ -39,7 +39,7 @@
 /*
  *
  */
-static void
+static AT89S_EID
 start_reprogram ( void );
 
 
@@ -99,6 +99,13 @@ write_data ( Msg_Memmory_t * mem_msg_ptr );
 static AT89S_EID
 read_data ( Msg_Memmory_t * mem_msg_ptr );
 
+/*
+ *
+ */
+static AT89S_EID
+read_lock_bit ( uint8_t* lckbit_ptr );
+
+
 /*******************************************************************
  *
  *      GLOBAL VARIABLES
@@ -131,14 +138,20 @@ AT89S_EID  g_eid = EID_OK;
 /*
  *
  */
-static void
+static AT89S_EID 
 start_reprogram ( void )
 {
+    uint32_t resp = 0;
+
     digitalWrite(PIN_RST, HIGH);
     digitalWrite(PIN_SCK, LOW);
     delayMicroseconds(T_RESET);
 
-    send_mcu_cmd(PROGRAM_ENABLE);
+    resp = send_mcu_cmd(PROGRAM_ENABLE);
+
+    if (resp == MCU_PROGRAM_ENA_OK)
+        return EID_OK;
+    return EID_NOK;
 }
 
 /*
@@ -310,15 +323,14 @@ write_data ( Msg_Memmory_t * mem_msg_ptr )
 //        }
 
         // send data;
-        for (i = 0; i < mem_msg_ptr->size || i < 256; ++i)
+        for (i = 0; i < mem_msg_ptr->size; ++i)
         {
-            send_byte_cmd(0x50);
+            send_byte_cmd(0x40);
             send_byte_cmd(0x00);
-//          send_byte_cmd(i);
+            send_byte_cmd(i);
             resp = send_byte_cmd(mem_msg_ptr->data[i]);
             for (j = 0; j < 1000; ++j);
 //            delayMicroseconds(T_SWC);
-//            snprintf(resp, sizeof(resp), "0x%08lx", mcu_cmd);
             Serial.print(resp);
             Serial.print("  ");
         }
@@ -367,7 +379,7 @@ read_data ( Msg_Memmory_t * mem_msg_ptr )
         {
             resp = send_byte_cmd(0x20);
             resp = send_byte_cmd(0x00);
-            resp = send_byte_cmd(i);
+//            resp = send_byte_cmd(i);
             resp = send_byte_cmd(0);
 
             mem_msg_ptr->data[i] = (uint8_t) resp;
@@ -391,6 +403,28 @@ read_data ( Msg_Memmory_t * mem_msg_ptr )
 
     return eid;
 }
+
+/*
+ *
+ */
+static AT89S_EID
+read_lock_bit ( uint8_t* lckbit_ptr )
+{
+    AT89S_EID eid = EID_OK;
+
+    // program enable
+    eid = start_reprogram();
+    // read lock bit
+    if (eid == EID_OK)
+    {
+        *lckbit_ptr = send_mcu_cmd(READ_LOCK_BIT);
+    }
+    // reset MCU
+    reset_mcu();
+
+    return eid;
+}
+
 
 
 /*******************************************************************

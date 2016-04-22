@@ -12,7 +12,7 @@
  *
  ******************************************************************/
 #define  READ_LOCK_BIT           0xA4000000UL
-#define  PROGRAM_ENABLE          0xAC530060UL
+#define  PROGRAM_ENABLE          0xAC530000UL
 #define  CHIP_ERASE              0xAC800000UL
 #define  WRITE_LOCK_BIT          0xACE00000UL
 #define  READ_BYTE_MEM           0x20000000UL
@@ -23,6 +23,13 @@
 #define  WRITE_BYTE_MEM          0x40000000UL
 #define  WRITE_PAGE_MEM          0x50000000UL
 
+
+/*******************************************************************
+ *
+ *      AT89S52 CONSTANTS
+ *
+ ******************************************************************/
+#define  MCU_PROGRAM_ENA_OK        0x69
 
 
 /*******************************************************************
@@ -37,7 +44,7 @@
 #define  T_OVSH      T_CLCL // Nanosecond
 #define  T_SHOX      (2 * T_CLCL) // Nanosecond
 #define  T_SLIV      (16) // Nanosecond
-#define  T_ERASE     (500) // 500 Millisecond
+#define  T_ERASE     (500000) // 500000 microsecond = 500 Millisecond
 #define  T_SWC       (64 * T_CLCL + 400) // Microsecond
 #define  T_RESET     (1000) // Microsecond
 
