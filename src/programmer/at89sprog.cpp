@@ -3,9 +3,6 @@
  *      HEADERS
  *
  ******************************************************************/
-#include <string.h>
-#include <util/delay.h>
-
 #include "Arduino.h"
 #include "at89s52.h"
 #include "crc.h"
@@ -100,7 +97,13 @@ read_data ( Msg_Memmory_t * mem_msg_ptr );
  *
  */
 static AT89S_EID
-read_lock_bit ( uint8_t* lckbit_ptr );
+read_lock_bit ( Msg_LockBit_t* msg_lbit_ptr );
+
+/*
+ *
+ */
+static AT89S_EID
+write_lock_bit ( Msg_LockBit_t* msg_lbit_ptr );
 
 
 /*******************************************************************
@@ -251,22 +254,27 @@ process_message ( AT89S_Msg_t* atmsg_ptr )
         switch (atmsg_ptr->msgt)
         {
             case CMD_W_MEM:
+                eid = write_data(&atmsg_ptr->data.msg_memory);
                 break;
 
             case CMD_R_MEM:
+                eid = read_data(&atmsg_ptr->data.msg_memory);
                 break;
 
             case CMD_E_MEM:
+                eid = erase_chip();
                 break;
 
             case CMD_R_SIG:
                 eid = read_device_signature(&atmsg_ptr->data.msg_signature);
                 break;
 
-            case CMD_W_USIG:
+            case CMD_R_LBIT:
+                eid = read_lock_bit(&atmsg_ptr->data.msg_lbit);
                 break;
 
-            case CMD_R_USIG:
+            case CMD_W_LBIT:
+                eid = write_lock_bit(&atmsg_ptr->data.msg_lbit);
                 break;
 
             default:
@@ -335,8 +343,6 @@ write_data ( Msg_Memmory_t * mem_msg_ptr )
                 send_mcu_byte(i);
                 resp = send_mcu_byte(mem_msg_ptr->data[i]);
                 delayMicroseconds(T_SWC);
-                Serial.print(resp);
-                Serial.print("  ");
             }
         }
 
@@ -376,13 +382,7 @@ read_data ( Msg_Memmory_t * mem_msg_ptr )
             send_mcu_byte(0x00);
             send_mcu_byte(i);
             mem_msg_ptr->data[i] = (uint8_t) read_mcu_byte();
-
-            for (j = 0; j < 10000; ++j);
-
-//            delayMicroseconds(T_SWC);
-//            snprintf(resp, sizeof(resp), "0x%08lx", mcu_cmd);
-            Serial.print(mem_msg_ptr->data[i]);
-            Serial.print("  ");
+            delayMicroseconds(T_SWC);
         }
 
         // flash data done, reset target MCU
@@ -401,7 +401,7 @@ read_data ( Msg_Memmory_t * mem_msg_ptr )
  *
  */
 static AT89S_EID
-read_lock_bit ( uint8_t* lckbit_ptr )
+read_lock_bit ( Msg_LockBit_t* msg_lbit_ptr )
 {
     AT89S_EID eid = EID_OK;
 
@@ -410,7 +410,33 @@ read_lock_bit ( uint8_t* lckbit_ptr )
     // read lock bit
     if (eid == EID_OK)
     {
-        *lckbit_ptr = send_mcu_cmd(READ_LOCK_BIT);
+        msg_lbit_ptr->lock_bit[0] = send_mcu_cmd(READ_LOCK_BIT);
+        msg_lbit_ptr->lock_bit[1] = send_mcu_cmd(READ_LOCK_BIT);
+        msg_lbit_ptr->lock_bit[2] = send_mcu_cmd(READ_LOCK_BIT);
+    }
+    // reset MCU
+    reset_mcu();
+
+    return eid;
+}
+
+
+/*
+ *
+ */
+static AT89S_EID
+write_lock_bit ( Msg_LockBit_t* msg_lbit_ptr )
+{
+    AT89S_EID eid = EID_OK;
+
+    // program enable
+    eid = start_reprogram();
+    // read lock bit
+    if (eid == EID_OK)
+    {
+        msg_lbit_ptr->lock_bit[0] = send_mcu_cmd(READ_LOCK_BIT);
+        msg_lbit_ptr->lock_bit[1] = send_mcu_cmd(READ_LOCK_BIT);
+        msg_lbit_ptr->lock_bit[2] = send_mcu_cmd(READ_LOCK_BIT);
     }
     // reset MCU
     reset_mcu();
