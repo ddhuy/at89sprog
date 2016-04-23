@@ -70,15 +70,15 @@ MsgDecoder  msg_decoders[] =
     { CMD_R_MEM, NULL },
     { CMD_E_MEM, NULL },
     { CMD_R_SIG, dec_c_rsign },
-    { CMD_R_USIG, NULL },
-    { CMD_W_USIG, NULL },
+    { CMD_R_LBIT, NULL },
+    { CMD_W_LBIT, NULL },
 
     { RES_W_MEM, dec_r_wmem },
     { RES_R_MEM, NULL },
     { RES_E_MEM, NULL },
     { RES_R_SIG, dec_r_rsign },
-    { RES_R_USIG, NULL },
-    { RES_W_USIG, NULL },
+    { RES_R_LBIT, NULL },
+    { RES_W_LBIT, NULL },
 
     { CMD_NULL, NULL },
 };
@@ -178,10 +178,10 @@ dec_r_rsign ( char* data_buf,
     if (data_buf == NULL || atmsg == NULL)
         return EID_ARG_NULL;
 
+    atmsg->data.msg_signature.type         = data_buf[data_len++];
     atmsg->data.msg_signature.signature[0] = data_buf[data_len++];
     atmsg->data.msg_signature.signature[1] = data_buf[data_len++];
     atmsg->data.msg_signature.signature[2] = data_buf[data_len++];
-    atmsg->data.msg_signature.signature[3] = data_buf[data_len++];
 
     return EID_OK;
 }

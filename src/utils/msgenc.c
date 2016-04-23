@@ -69,15 +69,15 @@ MsgEncoder  msg_encoders[] =
     { CMD_R_MEM, NULL },
     { CMD_E_MEM, NULL },
     { CMD_R_SIG, enc_c_rsig },
-    { CMD_R_USIG, NULL },
-    { CMD_W_USIG, NULL },
+    { CMD_R_LBIT, NULL },
+    { CMD_W_LBIT, NULL },
 
     { RES_W_MEM, enc_r_wmem },
     { RES_R_MEM, NULL },
     { RES_E_MEM, NULL },
     { RES_R_SIG, enc_r_rsig },
-    { RES_R_USIG, NULL },
-    { RES_W_USIG, NULL },
+    { RES_R_LBIT, NULL },
+    { RES_W_LBIT, NULL },
 
     { CMD_NULL, NULL },
 };
@@ -183,10 +183,10 @@ enc_r_rsig ( AT89S_Msg_t* atmsg,
     if (atmsg == NULL || data_buf == NULL || data_len == NULL)
         return EID_ARG_NULL;
 
+    data_buf[(*data_len)++] = atmsg->data.msg_signature.type;
     data_buf[(*data_len)++] = atmsg->data.msg_signature.signature[0];
     data_buf[(*data_len)++] = atmsg->data.msg_signature.signature[1];
     data_buf[(*data_len)++] = atmsg->data.msg_signature.signature[2];
-    data_buf[(*data_len)++] = atmsg->data.msg_signature.signature[3];
 
     return EID_OK;
 }

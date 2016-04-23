@@ -3,9 +3,6 @@
  *      HEADERS
  *
  ******************************************************************/
-#include <string.h>
-#include <util/delay.h>
-
 #include "Arduino.h"
 #include "at89s52.h"
 #include "crc.h"
@@ -39,9 +36,8 @@
 /*
  *
  */
-static void
+static AT89S_EID
 start_reprogram ( void );
-
 
 /*
  *
@@ -49,22 +45,23 @@ start_reprogram ( void );
 static void
 reset_mcu( void );
 
-
-
 /*
  *
  */
-static unsigned long
+static unsigned char
 send_mcu_cmd ( unsigned long command );
 
+/*
+ *
+ */
+static unsigned char
+send_mcu_byte ( unsigned char command );
 
 /*
  *
  */
-static unsigned long
-send_byte_cmd ( unsigned char command );
-
-
+static unsigned char
+read_mcu_byte ( void );
 
 /*
  *
@@ -72,13 +69,11 @@ send_byte_cmd ( unsigned char command );
 static void
 erase_chip ( void );
 
-
 /*
  *
  */
 static AT89S_EID
 process_message ( AT89S_Msg_t* atmsg_ptr );
-
 
 /*
  *
@@ -92,12 +87,24 @@ read_device_signature ( Msg_Signature_t * signature_msg_ptr );
 static AT89S_EID
 write_data ( Msg_Memmory_t * mem_msg_ptr );
 
-
 /*
  *
  */
 static AT89S_EID
 read_data ( Msg_Memmory_t * mem_msg_ptr );
+
+/*
+ *
+ */
+static AT89S_EID
+read_lock_bit ( Msg_LockBit_t* msg_lbit_ptr );
+
+/*
+ *
+ */
+static AT89S_EID
+write_lock_bit ( Msg_LockBit_t* msg_lbit_ptr );
+
 
 /*******************************************************************
  *
@@ -131,14 +138,20 @@ AT89S_EID  g_eid = EID_OK;
 /*
  *
  */
-static void
+static AT89S_EID 
 start_reprogram ( void )
 {
+    uint32_t resp = 0;
+
     digitalWrite(PIN_RST, HIGH);
     digitalWrite(PIN_SCK, LOW);
     delayMicroseconds(T_RESET);
 
-    send_mcu_cmd(PROGRAM_ENABLE);
+    resp = send_mcu_cmd(PROGRAM_ENABLE);
+
+    if (resp == MCU_PROGRAM_ENA_OK)
+        return EID_OK;
+    return EID_NOK;
 }
 
 /*
@@ -158,13 +171,13 @@ static void
 erase_chip ( void )
 {
     send_mcu_cmd(CHIP_ERASE);
-    delayMicroseconds(T_ERASE);
+    delay(T_ERASE);
 }
 
 /*
  *
  */
-static unsigned long
+static unsigned char
 send_mcu_cmd ( unsigned long command )
 {
     unsigned long resp = 0;
@@ -179,15 +192,15 @@ send_mcu_cmd ( unsigned long command )
     }
     digitalWrite(PIN_SCK, HIGH);
 
-    return resp;
+    return ((unsigned char) resp);
 }
 
 
 /*
  *
  */
-static unsigned long
-send_byte_cmd ( unsigned char command )
+static unsigned char
+send_mcu_byte ( unsigned char command )
 {
     unsigned long resp = 0;
     signed char i = 0;
@@ -199,9 +212,28 @@ send_byte_cmd ( unsigned char command )
         digitalWrite(PIN_SCK, HIGH);
         resp |= ((digitalRead(PIN_MISO) & 0x01) << i);
     }
-    digitalWrite(PIN_SCK, HIGH);
+    digitalWrite(PIN_SCK, LOW);
 
     return resp;
+}
+
+/*
+ *
+ */
+static unsigned char
+read_mcu_byte ( void )
+{
+    signed char i = 0;
+    unsigned char read_byte = 0;
+
+    for (i = 7; i >= 0; --i)
+    {
+        digitalWrite(PIN_SCK, HIGH);
+        read_byte |= ((digitalRead(PIN_MISO) & 0x01) << i);
+        digitalWrite(PIN_SCK, LOW);
+    }
+
+    return read_byte;
 }
 
 
@@ -222,22 +254,27 @@ process_message ( AT89S_Msg_t* atmsg_ptr )
         switch (atmsg_ptr->msgt)
         {
             case CMD_W_MEM:
+                eid = write_data(&atmsg_ptr->data.msg_memory);
                 break;
 
             case CMD_R_MEM:
+                eid = read_data(&atmsg_ptr->data.msg_memory);
                 break;
 
             case CMD_E_MEM:
+                eid = erase_chip();
                 break;
 
             case CMD_R_SIG:
                 eid = read_device_signature(&atmsg_ptr->data.msg_signature);
                 break;
 
-            case CMD_W_USIG:
+            case CMD_R_LBIT:
+                eid = read_lock_bit(&atmsg_ptr->data.msg_lbit);
                 break;
 
-            case CMD_R_USIG:
+            case CMD_W_LBIT:
+                eid = write_lock_bit(&atmsg_ptr->data.msg_lbit);
                 break;
 
             default:
@@ -262,13 +299,12 @@ read_device_signature ( Msg_Signature_t * signature_msg_ptr )
         // start reprogram mode
         start_reprogram();
         // read device signature
-        signature_msg_ptr->signature[0] = ((unsigned char *) &res)[0];
         res = send_mcu_cmd(READ_SIGNATURE_BYTE1);
-        signature_msg_ptr->signature[1] = ((unsigned char *) &res)[0];
+        signature_msg_ptr->signature[0] = ((unsigned char *) &res)[0];
         res = send_mcu_cmd(READ_SIGNATURE_BYTE2);
-        signature_msg_ptr->signature[2] = ((unsigned char *) &res)[0];
+        signature_msg_ptr->signature[1] = ((unsigned char *) &res)[0];
         res = send_mcu_cmd(READ_SIGNATURE_BYTE3);
-        signature_msg_ptr->signature[3] = ((unsigned char *) &res)[0];
+        signature_msg_ptr->signature[2] = ((unsigned char *) &res)[0];
         // reset when done
         reset_mcu();
     }
@@ -288,10 +324,7 @@ static AT89S_EID
 write_data ( Msg_Memmory_t * mem_msg_ptr )
 {
     AT89S_EID eid = EID_OK;
-    uint32_t i = 0, j = 0;
-    uint32_t mcu_cmd = 0;
-
-    uint32_t resp;
+    uint8_t i = 0, resp = 0;
 
     if (mem_msg_ptr)
     {
@@ -300,27 +333,17 @@ write_data ( Msg_Memmory_t * mem_msg_ptr )
         // erase flash first
         erase_chip();
 
-//        if (mem_msg_ptr->mode == PAGE_MODE)
-//        {
-//            mcu_cmd = WRITE_PAGE_MEM;
-//        }
-//        else // BYTE_MODE
-//        {
-//            mcu_cmd = WRITE_BYTE_MEM;
-//        }
-
-        // send data;
-        for (i = 0; i < mem_msg_ptr->size || i < 256; ++i)
+        // send data
+        if (mem_msg_ptr->mode == BYTE_MODE)
         {
-            send_byte_cmd(0x50);
-            send_byte_cmd(0x00);
-//          send_byte_cmd(i);
-            resp = send_byte_cmd(mem_msg_ptr->data[i]);
-            for (j = 0; j < 1000; ++j);
-//            delayMicroseconds(T_SWC);
-//            snprintf(resp, sizeof(resp), "0x%08lx", mcu_cmd);
-            Serial.print(resp);
-            Serial.print("  ");
+            for (i = 0; i < mem_msg_ptr->size; ++i)
+            {
+                send_mcu_byte(0x40);
+                send_mcu_byte(0x00);
+                send_mcu_byte(i);
+                resp = send_mcu_byte(mem_msg_ptr->data[i]);
+                delayMicroseconds(T_SWC);
+            }
         }
 
         // flash data done, reset target MCU
@@ -345,39 +368,21 @@ read_data ( Msg_Memmory_t * mem_msg_ptr )
 {
     AT89S_EID eid = EID_OK;
     uint32_t i = 0, j = 0;
-    uint32_t mcu_cmd = 0;
 
-    uint32_t resp;
 
     if (mem_msg_ptr)
     {
         // start reprogram mode
         start_reprogram();
-//        if (mem_msg_ptr->mode == PAGE_MODE)
-//        {
-//            mcu_cmd = WRITE_PAGE_MEM;
-//        }
-//        else // BYTE_MODE
-//        {
-//            mcu_cmd = WRITE_BYTE_MEM;
-//        }
 
-        // send data;
-        for (i = 0; i < 256; ++i)
+        // read data;
+        for (i = 0; i < mem_msg_ptr->size; ++i)
         {
-            resp = send_byte_cmd(0x20);
-            resp = send_byte_cmd(0x00);
-            resp = send_byte_cmd(i);
-            resp = send_byte_cmd(0);
-
-            mem_msg_ptr->data[i] = (uint8_t) resp;
-
-            for (j = 0; j < 10000; ++j);
-
-//            delayMicroseconds(T_SWC);
-//            snprintf(resp, sizeof(resp), "0x%08lx", mcu_cmd);
-            Serial.print(resp);
-            Serial.print("  ");
+            send_mcu_byte(0x20);
+            send_mcu_byte(0x00);
+            send_mcu_byte(i);
+            mem_msg_ptr->data[i] = (uint8_t) read_mcu_byte();
+            delayMicroseconds(T_SWC);
         }
 
         // flash data done, reset target MCU
@@ -391,6 +396,54 @@ read_data ( Msg_Memmory_t * mem_msg_ptr )
 
     return eid;
 }
+
+/*
+ *
+ */
+static AT89S_EID
+read_lock_bit ( Msg_LockBit_t* msg_lbit_ptr )
+{
+    AT89S_EID eid = EID_OK;
+
+    // program enable
+    eid = start_reprogram();
+    // read lock bit
+    if (eid == EID_OK)
+    {
+        msg_lbit_ptr->lock_bit[0] = send_mcu_cmd(READ_LOCK_BIT);
+        msg_lbit_ptr->lock_bit[1] = send_mcu_cmd(READ_LOCK_BIT);
+        msg_lbit_ptr->lock_bit[2] = send_mcu_cmd(READ_LOCK_BIT);
+    }
+    // reset MCU
+    reset_mcu();
+
+    return eid;
+}
+
+
+/*
+ *
+ */
+static AT89S_EID
+write_lock_bit ( Msg_LockBit_t* msg_lbit_ptr )
+{
+    AT89S_EID eid = EID_OK;
+
+    // program enable
+    eid = start_reprogram();
+    // read lock bit
+    if (eid == EID_OK)
+    {
+        msg_lbit_ptr->lock_bit[0] = send_mcu_cmd(READ_LOCK_BIT);
+        msg_lbit_ptr->lock_bit[1] = send_mcu_cmd(READ_LOCK_BIT);
+        msg_lbit_ptr->lock_bit[2] = send_mcu_cmd(READ_LOCK_BIT);
+    }
+    // reset MCU
+    reset_mcu();
+
+    return eid;
+}
+
 
 
 /*******************************************************************
@@ -464,12 +517,13 @@ loop ( void )
     Msg_Signature_t signature_msg;
     Msg_Memory_t memory_msg;
 
-    static unsigned char sample_data[] = { 0x75, 0xA0, 0xFF, 0x12,
+    static unsigned char sample_data[] = { 0x75, 0xA0, 0xAA, 0x12,
                                            0x00, 0x0E, 0x75, 0xA0,
-                                           0x00, 0x12, 0x00, 0x0E,
-                                           0x80, 0xF2, 0x78, 0xC8,
-                                           0x79, 0xD2, 0x00, 0xD9,
-                                           0xFD, 0xD8, 0xF9, 0x22, };
+                                           0x55, 0x12, 0x00, 0x0E,
+                                           0x80, 0xF2, 0x79, 0x00,
+                                           0x78, 0x00, 0xD8, 0xFE,
+                                           0x00, 0x00, 0x00, 0x00,
+                                           0x00, 0xD9, 0xF7, 0x22 };
 
     if (Serial.available())
     {
@@ -483,20 +537,20 @@ loop ( void )
                 if (eid == EID_OK)
                 {
                     snprintf(resp, sizeof(resp),
-                             "%02x %02x %02x %02x",
+                             "%02x %02x %02x",
                              signature_msg.signature[0],
                              signature_msg.signature[1],
-                             signature_msg.signature[2],
-                             signature_msg.signature[3]);
+                             signature_msg.signature[2]);
                     Serial.println(resp);
                 }
                 break;
 
             case 'w':
-                memory_msg.size    = 0x18;
+                memory_msg.size    = 0x1C;
                 memory_msg.address = 0x0000;
                 memory_msg.rectype = 0x00;
                 memory_msg.crc     = 0xF9;
+                memory_msg.mode    = BYTE_MODE;
                 memcpy(memory_msg.data, sample_data, memory_msg.size);
 
                 eid = write_data(&memory_msg);
@@ -506,6 +560,7 @@ loop ( void )
                 break;
 
             case 'r':
+                memory_msg.size = 0x1C;
                 eid = read_data(&memory_msg);
                 snprintf(resp, sizeof(resp), "\nRead data %d !", eid);
                 Serial.println(resp);

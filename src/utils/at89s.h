@@ -25,15 +25,15 @@
 #define  CMD_R_MEM     0x02
 #define  CMD_E_MEM     0x03
 #define  CMD_R_SIG     0x04
-#define  CMD_R_USIG    0x05
-#define  CMD_W_USIG    0x06
+#define  CMD_R_LBIT    0x05
+#define  CMD_W_LBIT    0x06
 
 #define  RES_W_MEM     0x10
 #define  RES_R_MEM     0x20
 #define  RES_E_MEM     0x30
 #define  RES_R_SIG     0x40
-#define  RES_R_USIG    0x50
-#define  RES_W_USIG    0x60
+#define  RES_R_LBIT    0x50
+#define  RES_W_LBIT    0x60
 
 #define  CMD_MASK    0x0F
 #define  RES_MASK    0xF0
@@ -111,17 +111,17 @@ typedef enum AT89S_EID
 } AT89S_EID;
 
 /*
- * Command Signature
+ * Message Signature
  */
 typedef struct Msg_Signature_t
 {
     uint8_t type;
-    uint8_t signature[4];
+    uint8_t signature[3];
 
 } Msg_Signature_t;
 
 /*
- * Command Memory
+ * Message Memory
  */
 typedef struct Msg_Memmory_t
 {
@@ -131,10 +131,19 @@ typedef struct Msg_Memmory_t
     uint8_t   rectype;
     uint8_t   size;
     uint8_t   crc;
-//    uint8_t   data[DATA_SIZE - 7];
-    uint8_t data[256];
+    uint8_t   data[DATA_SIZE - 7];
 
 } Msg_Memory_t;
+
+/*
+ * Message Lock Bit
+ */
+typedef struct Msg_LockBit_t
+{
+    uint8_t lock_bit[3];
+
+} Msg_LockBit_t;
+
 
 
 /*
@@ -151,6 +160,7 @@ typedef struct AT89S_Msg_t
     {
         Msg_Signature_t  msg_signature;
         Msg_Memory_t     msg_memory;
+        Msg_LockBit_t    msg_lbit;
 
         uint8_t d[DATA_SIZE];
 
