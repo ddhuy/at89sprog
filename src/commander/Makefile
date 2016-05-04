@@ -16,7 +16,7 @@ OBJS = $(TMP_OBJS:.cpp=.o)
 #
 # Compiler configuration
 #
-CC = g++
+CC = gcc
 AR = ar
 LD = ld
 

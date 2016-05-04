@@ -115,8 +115,8 @@ write_lock_bit ( Msg_LockBit_t* msg_lbit_ptr );
  * Global raw data message
  */
 char      g_data_buf[MSG_SIZE] = { 0 };
-uint16_t  g_data_len = 0;
-uint8_t   g_data_crc = 0;
+int       g_data_len = 0;
+char      g_data_crc = 0;
 
 /*
  * Global AT89S Message
@@ -243,7 +243,7 @@ read_mcu_byte ( void )
 static AT89S_EID
 process_message ( AT89S_Msg_t* atmsg_ptr )
 {
-    AT89S_EID eid = EID_OK;
+    AT89S_EID eid = EID_NOK;
 
     if (atmsg_ptr == NULL)
     {
@@ -262,7 +262,8 @@ process_message ( AT89S_Msg_t* atmsg_ptr )
                 break;
 
             case CMD_E_MEM:
-                eid = erase_chip();
+                eid = EID_OK;
+                erase_chip();
                 break;
 
             case CMD_R_SIG:
@@ -278,6 +279,7 @@ process_message ( AT89S_Msg_t* atmsg_ptr )
                 break;
 
             default:
+                eid = EID_CMD_BAD;
                 break;
         }
     }
@@ -324,7 +326,7 @@ static AT89S_EID
 write_data ( Msg_Memmory_t * mem_msg_ptr )
 {
     AT89S_EID eid = EID_OK;
-    uint8_t i = 0, resp = 0;
+    uint8_t i = 0;
 
     if (mem_msg_ptr)
     {
@@ -341,15 +343,13 @@ write_data ( Msg_Memmory_t * mem_msg_ptr )
                 send_mcu_byte(0x40);
                 send_mcu_byte(0x00);
                 send_mcu_byte(i);
-                resp = send_mcu_byte(mem_msg_ptr->data[i]);
+                send_mcu_byte(mem_msg_ptr->data[i]);
                 delayMicroseconds(T_SWC);
             }
         }
 
         // flash data done, reset target MCU
         reset_mcu();
-
-
     }
     else
     {
@@ -367,8 +367,7 @@ static AT89S_EID
 read_data ( Msg_Memmory_t * mem_msg_ptr )
 {
     AT89S_EID eid = EID_OK;
-    uint32_t i = 0, j = 0;
-
+    uint32_t i = 0;
 
     if (mem_msg_ptr)
     {
@@ -488,87 +487,37 @@ setup ( void )
 void
 loop ( void )
 {
-//    // get data from commander
-//    int nbytes = Serial.available();
-//    while (g_data_len < MSG_SIZE && nbytes > 0)
-//    {
-//        nbytes--;
-//        g_data_buf[g_data_len++] = Serial.read();
-//    }
-//
-//    // decode message from commander
-//    if (g_data_len >= MSG_SIZE)
-//    {
-//        g_eid = decode_msg(g_data_buf, g_data_len, &g_at89msg);
-//        if (g_eid == EID_OK)
-//        {
-//            g_eid = process_message(&g_at89msg);
-//            if (g_eid == EID_OK)
-//            {}
-//        }
-//
-//        // reset value for next message
-//        g_data_len = 0;
-//    }
-
-    char cmd;
-    char resp[256] = { 0 };
-    AT89S_EID eid = EID_NOK;
-    Msg_Signature_t signature_msg;
-    Msg_Memory_t memory_msg;
-
-    static unsigned char sample_data[] = { 0x75, 0xA0, 0xAA, 0x12,
-                                           0x00, 0x0E, 0x75, 0xA0,
-                                           0x55, 0x12, 0x00, 0x0E,
-                                           0x80, 0xF2, 0x79, 0x00,
-                                           0x78, 0x00, 0xD8, 0xFE,
-                                           0x00, 0x00, 0x00, 0x00,
-                                           0x00, 0xD9, 0xF7, 0x22 };
-
-    if (Serial.available())
+    // get data from commander
+    int nbytes = Serial.available();
+    while (g_data_len < MSG_SIZE && nbytes > 0)
     {
-        cmd = Serial.read();
+        nbytes--;
+        g_data_buf[g_data_len++] = Serial.read();
+    }
 
-        switch(cmd)
+    // decode message from commander
+    if (g_data_len >= MSG_SIZE)
+    {
+        g_eid = decode_msg(g_data_buf, MSG_SIZE, &g_at89msg);
+        if (g_eid == EID_OK)
         {
-            case 's':
-                signature_msg.type = SIGN_DEV;
-                eid = read_device_signature(&signature_msg);
-                if (eid == EID_OK)
-                {
-                    snprintf(resp, sizeof(resp),
-                             "%02x %02x %02x",
-                             signature_msg.signature[0],
-                             signature_msg.signature[1],
-                             signature_msg.signature[2]);
-                    Serial.println(resp);
-                }
-                break;
-
-            case 'w':
-                memory_msg.size    = 0x1C;
-                memory_msg.address = 0x0000;
-                memory_msg.rectype = 0x00;
-                memory_msg.crc     = 0xF9;
-                memory_msg.mode    = BYTE_MODE;
-                memcpy(memory_msg.data, sample_data, memory_msg.size);
-
-                eid = write_data(&memory_msg);
-                snprintf(resp, sizeof(resp), "\nWrite data %d !", eid);
-                Serial.println(resp);
-
-                break;
-
-            case 'r':
-                memory_msg.size = 0x1C;
-                eid = read_data(&memory_msg);
-                snprintf(resp, sizeof(resp), "\nRead data %d !", eid);
-                Serial.println(resp);
-                break;
-
-            default:
-                break;
+            g_eid = process_message(&g_at89msg);
+            if (g_eid == EID_OK)
+            {
+                g_eid = encode_msg(&g_at89msg, g_data_buf, &g_data_len);
+            }
         }
 
+        if (g_eid == EID_OK)
+        {
+            // respond data
+        }
+        else
+        {
+            // report error
+        }
+
+        // reset value for next message
+        g_data_len = 0;
     }
 }

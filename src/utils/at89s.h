@@ -172,7 +172,6 @@ typedef struct AT89S_Msg_t
         Msg_Response_t   msg_resp;
 
         uint8_t d[DATA_SIZE];
-
     } data;
 
 } AT89S_Msg_t;
@@ -190,6 +189,7 @@ AT89S_EID decode_msg ( char* data_buf,
 AT89S_EID encode_msg ( AT89S_Msg_t* atmsg,
                        char* data_buf,
                        int* data_len );
+
 
 
 #endif /* _AT89S_TYPES_H_ */

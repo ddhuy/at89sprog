@@ -11,7 +11,6 @@
  *      AT89S52 MCU COMMANDS
  *
  ******************************************************************/
-#define  READ_LOCK_BIT           0xA4000000UL
 #define  PROGRAM_ENABLE          0xAC530000UL
 #define  CHIP_ERASE              0xAC800000UL
 #define  WRITE_LOCK_BIT          0xACE00000UL
