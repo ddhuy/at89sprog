@@ -56,6 +56,45 @@ enc_r_wmem ( AT89S_Msg_t* atmsg,
              char* data_buf,
              int* data_len );
 
+static AT89S_EID
+enc_c_rmem ( AT89S_Msg_t* atmsg,
+             char* data_buf,
+             int* data_len );
+
+static AT89S_EID
+enc_r_rmem ( AT89S_Msg_t* atmsg,
+             char* data_buf,
+             int* data_len );
+
+static AT89S_EID
+enc_c_emem ( AT89S_Msg_t* atmsg,
+             char* data_buf,
+             int* data_len );
+
+static AT89S_EID
+enc_r_emem ( AT89S_Msg_t* atmsg,
+             char* data_buf,
+             int* data_len );
+
+static AT89S_EID
+enc_c_rlbit ( AT89S_Msg_t* atmsg,
+              char* data_buf,
+              int* data_len );
+
+static AT89S_EID
+enc_r_rlbit ( AT89S_Msg_t* atmsg,
+              char* data_buf,
+              int* data_len );
+
+static AT89S_EID
+enc_c_wlbit ( AT89S_Msg_t* atmsg,
+              char* data_buf,
+              int* data_len );
+
+static AT89S_EID
+enc_r_wlbit ( AT89S_Msg_t* atmsg,
+              char* data_buf,
+              int* data_len );
 
 
 /*******************************************************************
@@ -66,18 +105,18 @@ enc_r_wmem ( AT89S_Msg_t* atmsg,
 MsgEncoder  msg_encoders[] = 
 {
     { CMD_W_MEM, enc_c_wmem },
-    { CMD_R_MEM, NULL },
-    { CMD_E_MEM, NULL },
+    { CMD_R_MEM, enc_c_rmem },
+    { CMD_E_MEM, enc_c_emem },
     { CMD_R_SIG, enc_c_rsig },
-    { CMD_R_LBIT, NULL },
-    { CMD_W_LBIT, NULL },
+    { CMD_R_LBIT, enc_c_rlbit },
+    { CMD_W_LBIT, enc_c_wlbit },
 
     { RES_W_MEM, enc_r_wmem },
-    { RES_R_MEM, NULL },
-    { RES_E_MEM, NULL },
+    { RES_R_MEM, enc_r_rmem },
+    { RES_E_MEM, enc_r_emem },
     { RES_R_SIG, enc_r_rsig },
-    { RES_R_LBIT, NULL },
-    { RES_W_LBIT, NULL },
+    { RES_R_LBIT, enc_r_rlbit },
+    { RES_W_LBIT, enc_r_wlbit },
 
     { CMD_NULL, NULL },
 };
@@ -120,9 +159,13 @@ encode_msg ( AT89S_Msg_t* atmsg,
 
     if (msgenc_ptr->msgtype == CMD_NULL)
     {
+        eid = EID_CMD_BAD;
+    }
+    else if (msgenc_ptr->msgenc_fptr == NULL)
+    {
         eid = EID_ENC_NOT_FOUND;
     }
-    else if (msgenc_ptr->msgenc_fptr != NULL)
+    else
     {
         // initialize
         *data_len = 0;
@@ -141,7 +184,7 @@ encode_msg ( AT89S_Msg_t* atmsg,
     }
 
     return eid;
-}
+} /* encode_msg */
 
 
 /*
@@ -163,7 +206,7 @@ enc_c_rsig ( AT89S_Msg_t* atmsg,
     data_buf[(*data_len)++] = atmsg->data.msg_signature.type;
 
     return EID_OK;
-}
+} /* enc_c_rsig */
 
 
 
@@ -189,7 +232,7 @@ enc_r_rsig ( AT89S_Msg_t* atmsg,
     data_buf[(*data_len)++] = atmsg->data.msg_signature.signature[2];
 
     return EID_OK;
-}
+} /* enc_r_rsig */
 
 /*
  * Description:
@@ -224,7 +267,7 @@ enc_c_wmem ( AT89S_Msg_t* atmsg,
 
 
     return EID_OK;
-}
+} /* enc_c_wmem */
 
 /*
  * Description:
@@ -243,6 +286,149 @@ enc_r_wmem ( AT89S_Msg_t* atmsg,
         return EID_ARG_NULL;
 
     return EID_OK;
-}
+} /* enc_r_wmem */
 
+/*
+ * Description:
+ *
+ * Input:
+ *
+ * Output:
+ *
+ */
+static AT89S_EID
+enc_c_rmem ( AT89S_Msg_t* atmsg,
+             char* data_buf,
+             int* data_len )
+{
+    AT89S_EID eid = EID_NOK;
+
+    return eid;
+} /* enc_c_rmem */
+
+/*
+ * Description:
+ *
+ * Input:
+ *
+ * Output:
+ *
+ */
+static AT89S_EID
+enc_r_rmem ( AT89S_Msg_t* atmsg,
+             char* data_buf,
+             int* data_len )
+{
+    AT89S_EID eid = EID_NOK;
+
+    return eid;
+} /* enc_r_rmem */
+
+/*
+ * Description:
+ *
+ * Input:
+ *
+ * Output:
+ *
+ */
+static AT89S_EID
+enc_c_emem ( AT89S_Msg_t* atmsg,
+             char* data_buf,
+             int* data_len )
+{
+    AT89S_EID eid = EID_NOK;
+
+    return eid;
+} /* enc_c_emem */
+
+/*
+ * Description:
+ *
+ * Input:
+ *
+ * Output:
+ *
+ */
+static AT89S_EID
+enc_r_emem ( AT89S_Msg_t* atmsg,
+             char* data_buf,
+             int* data_len )
+{
+    AT89S_EID eid = EID_NOK;
+
+    return eid;
+} /* enc_r_emem */
+
+/*
+ * Description:
+ *
+ * Input:
+ *
+ * Output:
+ *
+ */
+static AT89S_EID
+enc_c_rlbit ( AT89S_Msg_t* atmsg,
+              char* data_buf,
+              int* data_len )
+{
+    AT89S_EID eid = EID_NOK;
+
+    return eid;
+} /* enc_c_rlbi */
+
+/*
+ * Description:
+ *
+ * Input:
+ *
+ * Output:
+ *
+ */
+static AT89S_EID
+enc_r_rlbit ( AT89S_Msg_t* atmsg,
+              char* data_buf,
+              int* data_len )
+{
+    AT89S_EID eid = EID_NOK;
+
+    return eid;
+} /* enc_r_rlbi */
+
+/*
+ * Description:
+ *
+ * Input:
+ *
+ * Output:
+ *
+ */
+static AT89S_EID
+enc_c_wlbit ( AT89S_Msg_t* atmsg,
+              char* data_buf,
+              int* data_len )
+{
+    AT89S_EID eid = EID_NOK;
+
+    return eid;
+} /* enc_c_wlbi */
+
+/*
+ * Description:
+ *
+ * Input:
+ *
+ * Output:
+ *
+ */
+static AT89S_EID
+enc_r_wlbit ( AT89S_Msg_t* atmsg,
+              char* data_buf,
+              int* data_len )
+{
+    AT89S_EID eid = EID_NOK;
+
+    return eid;
+} /* enc_r_wlbi */
 

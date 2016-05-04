@@ -144,6 +144,14 @@ typedef struct Msg_LockBit_t
 
 } Msg_LockBit_t;
 
+/*
+ * Response Message
+ */
+typedef struct Msg_Response_t
+{
+    uint8_t resp_code;
+
+} Msg_Response_t;
 
 
 /*
@@ -161,12 +169,14 @@ typedef struct AT89S_Msg_t
         Msg_Signature_t  msg_signature;
         Msg_Memory_t     msg_memory;
         Msg_LockBit_t    msg_lbit;
+        Msg_Response_t   msg_resp;
 
         uint8_t d[DATA_SIZE];
 
     } data;
 
 } AT89S_Msg_t;
+
 
 /*******************************************************************
  *
